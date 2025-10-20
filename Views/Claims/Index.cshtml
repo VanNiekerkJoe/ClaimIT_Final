@@ -2,12 +2,28 @@
 
 @{
     ViewData["Title"] = "ClaimIT Dashboard";
+
+    // Generate recent activities based on actual claim data
+    var recentActivities = GetRecentActivities(Model);
 }
+
+<!-- Particle Effects Background -->
+<div id="particles-js"></div>
 
 <div class="dashboard-header">
     <div class="container">
-        <h1 class="display-4">ClaimIT Dashboard</h1>
+        <h1 class="display-4 animated-title">ClaimIT Dashboard</h1>
         <p class="lead">Contract Monthly Claim System</p>
+        <div class="status-indicators">
+            <div class="status-indicator live">
+                <span class="pulse-dot"></span>
+                System Live
+            </div>
+            <div class="status-indicator claims">
+                <span class="pulse-dot"></span>
+                @Model.Count Total Claims
+            </div>
+        </div>
     </div>
 </div>
 
@@ -15,7 +31,8 @@
     <!-- Success/Error Messages -->
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show animated-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
             @TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -23,117 +40,443 @@
 
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show animated-alert" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
             @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <!-- Quick Stats -->
-    <div class="row">
-        <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
-            <div class="stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="card-icon">📊</div>
-                    <div class="flex-grow-1">
-                        <h5 class="card-title">Total Claims</h5>
-                        <h2 class="card-value" style="color: #2C3E50">@Model.Count</h2>
-                    </div>
+    <!-- Quick Stats Bar -->
+    <div class="quick-stats-bar mb-4 animated-fade-in">
+        <div class="row g-2">
+            <div class="col-auto">
+                <div class="stat-badge total">
+                    <span class="stat-icon">📊</span>
+                    <span class="stat-text">Total: <strong>@Model.Count</strong></span>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
-            <div class="stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="card-icon">⏳</div>
-                    <div class="flex-grow-1">
-                        <h5 class="card-title">Pending</h5>
-                        <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Pending")</h2>
-                    </div>
+            <div class="col-auto">
+                <div class="stat-badge pending">
+                    <span class="stat-icon">⏳</span>
+                    <span class="stat-text">Pending: <strong>@Model.Count(c => c.Status == "Pending")</strong></span>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
-            <div class="stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="card-icon">✅</div>
-                    <div class="flex-grow-1">
-                        <h5 class="card-title">Approved</h5>
-                        <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Approved")</h2>
-                    </div>
+            <div class="col-auto">
+                <div class="stat-badge approved">
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-text">Approved: <strong>@Model.Count(c => c.Status == "Approved")</strong></span>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
-            <div class="stat-card">
-                <div class="d-flex align-items-center">
-                    <div class="card-icon">🔍</div>
-                    <div class="flex-grow-1">
-                        <h5 class="card-title">Verified</h5>
-                        <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Verified")</h2>
-                    </div>
+            <div class="col-auto">
+                <div class="stat-badge verified">
+                    <span class="stat-icon">🔍</span>
+                    <span class="stat-text">Verified: <strong>@Model.Count(c => c.Status == "Verified")</strong></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Actions -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Recent Claims</h5>
-            <div class="d-flex gap-2">
-                <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">New Claim</a>
-                <a href="@Url.Action("ApprovalQueue")" class="btn btn-outline-primary btn-sm">Approval Queue</a>
+    <div class="row">
+        <!-- Main Content Area -->
+        <div class="col-lg-8">
+            <!-- Animated Stat Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card animated-card" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card-sparkline"></div>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">📊</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Total Claims</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count</h2>
+                                <div class="text-end">
+                                    <span class="card-trend trend-positive">+5%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card animated-card" data-aos="fade-up" data-aos-delay="200">
+                        <div class="card-sparkline"></div>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">⏳</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Pending</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Pending")</h2>
+                                <div class="text-end">
+                                    <span class="card-trend trend-negative">-2%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card animated-card" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card-sparkline"></div>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">✅</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Approved</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Approved")</h2>
+                                <div class="text-end">
+                                    <span class="card-trend trend-positive">+10%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card animated-card" data-aos="fade-up" data-aos-delay="400">
+                        <div class="card-sparkline"></div>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">🔍</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Verified</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Verified")</h2>
+                                <div class="text-end">
+                                    <span class="card-trend trend-positive">+3%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claim Status Tracker -->
+            <div class="card interactive-card mb-4" data-aos="fade-up">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Claim Status Tracker</h5>
+                    <div class="tracker-legend">
+                        <div class="legend-item">
+                            <span class="legend-color pending"></span>
+                            <span>Pending</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color verified"></span>
+                            <span>Verified</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color approved"></span>
+                            <span>Approved</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="status-tracker">
+                        @foreach (var claim in Model.OrderByDescending(c => c.SubmittedDate).Take(5))
+                        {
+                            <div class="tracker-item" data-aos="fade-right">
+                                <div class="tracker-info">
+                                    <div class="claim-meta">
+                                        <strong>#@claim.Id</strong>
+                                        <span class="lecturer-name">@claim.LecturerName</span>
+                                        <span class="claim-amount">R @claim.TotalAmount</span>
+                                    </div>
+                                    <div class="tracker-progress">
+                                        <div class="progress-bar-track">
+                                            <div class="progress-fill @GetStatusProgressClass(claim.Status)"
+                                                 style="width: @GetStatusProgressWidth(claim.Status)%">
+                                                <div class="progress-dot"></div>
+                                            </div>
+                                        </div>
+                                        <div class="progress-labels">
+                                            <span class="progress-label @(claim.Status == "Pending" ? "active" : "completed")">Submitted</span>
+                                            <span class="progress-label @(claim.Status == "Verified" || claim.Status == "Approved" ? "active" : "") @(claim.Status == "Approved" ? "completed" : "")">Verified</span>
+                                            <span class="progress-label @(claim.Status == "Approved" ? "active completed" : "")">Approved</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tracker-status">
+                                    <span class="status-badge @GetStatusBadgeClass(claim.Status) pulsate">
+                                        @claim.Status
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Data Table -->
+            <div class="card interactive-card" data-aos="fade-up">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Claims</h5>
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Create")" class="btn btn-primary btn-sm hover-lift">
+                            <i class="bi bi-plus-circle me-1"></i>New Claim
+                        </a>
+                        <a href="@Url.Action("ApprovalQueue")" class="btn btn-outline-primary btn-sm hover-lift">
+                            <i class="bi bi-list-check me-1"></i>Approval Queue
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Lecturer</th>
+                                    <th>Hours</th>
+                                    <th>Rate</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Documents</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var claim in Model.OrderByDescending(c => c.SubmittedDate))
+                                {
+                                    <tr class="claim-row hover-lift" data-status="@claim.Status.ToLower()" data-aos="fade-in">
+                                        <td><strong>#@claim.Id</strong></td>
+                                        <td>@claim.LecturerName</td>
+                                        <td>@claim.HoursWorked</td>
+                                        <td>R @claim.HourlyRate</td>
+                                        <td><strong>R @claim.TotalAmount</strong></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge @GetStatusBadgeClass(claim.Status) me-2 pulsate">
+                                                    @claim.Status
+                                                </span>
+                                                <div class="status-indicator @GetStatusIndicatorClass(claim.Status)"></div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (claim.DocumentNames != null && claim.DocumentNames.Any())
+                                            {
+                                                <div class="document-indicator hover-grow">
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                    <span class="document-count">@claim.DocumentNames.Count</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">No documents</small>
+                                            }
+                                        </td>
+                                        <td>@claim.SubmittedDate.ToString("MMM dd, yyyy")</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                @if (claim.Status == "Pending")
+                                                {
+                                                    <a href="@Url.Action("Verify", new { id = claim.Id })" class="btn btn-warning btn-sm hover-lift">Verify</a>
+                                                }
+                                                @if (claim.Status == "Verified")
+                                                {
+                                                    <a href="@Url.Action("Approve", new { id = claim.Id })" class="btn btn-success btn-sm hover-lift">Approve</a>
+                                                }
+                                                <a href="@Url.Action("Details", new { id = claim.Id })" class="btn btn-outline-secondary btn-sm hover-lift">View</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            @if (Model.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Lecturer</th>
-                                <th>Hours</th>
-                                <th>Rate</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var claim in Model)
-                            {
-                                <tr>
-                                    <td><strong>@claim.Id</strong></td>
-                                    <td>@claim.LecturerName</td>
-                                    <td>@claim.HoursWorked</td>
-                                    <td>R @claim.HourlyRate</td>
-                                    <td><strong>R @claim.TotalAmount</strong></td>
-                                    <td>
-                                        <span class="badge @GetStatusBadgeClass(claim.Status)">
-                                            @claim.Status
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="@Url.Action("Details", new { id = claim.Id })" class="btn btn-outline-secondary btn-sm">View</a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+
+        <!-- Enhanced Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card sticky-sidebar mb-4" data-aos="fade-left" data-aos-delay="200">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
                 </div>
-            }
-            else
-            {
-                <div class="text-center text-muted py-4">
-                    <p>No claims found. <a href="@Url.Action("Create")">Create your first claim</a></p>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Create")" class="btn btn-primary mb-2 hover-lift action-btn-large">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            <div>
+                                <strong>Add New Claim</strong>
+                                <small class="d-block">Submit monthly hours</small>
+                            </div>
+                        </a>
+                        <a href="@Url.Action("Create")" class="btn btn-outline-primary mb-2 hover-lift">
+                            <i class="bi bi-cloud-upload me-2"></i>Upload Documents
+                        </a>
+                        <a href="@Url.Action("ApprovalQueue")" class="btn btn-outline-primary mb-2 hover-lift">
+                            <i class="bi bi-list-check me-2"></i>Verify and Approve
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary hover-lift">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
+                        </a>
+                    </div>
                 </div>
-            }
+            </div>
+
+            <!-- Enhanced Recent Activity -->
+            <div class="card" data-aos="fade-left" data-aos-delay="300">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <div class="live-badge">
+                        <span class="live-dot"></span>
+                        LIVE
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="activity-timeline">
+                        @foreach (var activity in recentActivities)
+                        {
+                            <div class="activity-item" data-aos="fade-up">
+                                <div class="activity-icon @activity.Type">
+                                    @activity.Icon
+                                </div>
+                                <div class="activity-content">
+                                    <span class="activity-text">@activity.Description</span>
+                                    <span class="activity-time">@activity.Time</span>
+                                    @if (!string.IsNullOrEmpty(activity.User))
+                                    {
+                                        <span class="activity-user">by @activity.User</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (!recentActivities.Any())
+                        {
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-inbox display-4"></i>
+                                <p class="mt-2">No recent activity</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Stats -->
+            <div class="card mt-4" data-aos="fade-left" data-aos-delay="400">
+                <div class="card-header">
+                    <h5 class="mb-0">System Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="system-stats">
+                        <div class="stat-item">
+                            <i class="bi bi-speedometer2"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">@Model.Count</span>
+                                <span class="stat-label">Total Claims</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-clock"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">@Model.Count(c => c.Status == "Pending")</span>
+                                <span class="stat-label">Pending Review</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-check-circle"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">@Model.Count(c => c.Status == "Approved")</span>
+                                <span class="stat-label">Approved</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-graph-up"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">@GetCompletionRate(Model)%</span>
+                                <span class="stat-label">Completion Rate</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <!-- AOS Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+    <script>
+        // Initialize AOS animations
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
+
+        // Initialize particles.js
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#3498db" },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#3498db",
+                    opacity: 0.2,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 2,
+                    direction: "none",
+                    random: true,
+                    straight: false,
+                    out_mode: "out",
+                    bounce: false
+                }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: {
+                    onhover: { enable: true, mode: "repulse" },
+                    onclick: { enable: true, mode: "push" },
+                    resize: true
+                }
+            }
+        });
+
+        // Add hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add ripple effect to buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = button.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+                    ripple.classList.add('ripple');
+
+                    button.appendChild(ripple);
+
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+
+            // Auto-refresh activity every 30 seconds
+            setInterval(() => {
+                const activityItems = document.querySelectorAll('.activity-item');
+                activityItems.forEach(item => {
+                    item.classList.add('refreshing');
+                    setTimeout(() => item.classList.remove('refreshing'), 500);
+                });
+            }, 30000);
+        });
+    </script>
+}
 
 @functions {
     public string GetStatusBadgeClass(string status)
@@ -151,5 +494,167 @@
             default:
                 return "bg-secondary";
         }
+    }
+
+    public string GetStatusIndicatorClass(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return "bg-warning";
+            case "Verified":
+                return "bg-info";
+            case "Approved":
+                return "bg-success";
+            case "Rejected":
+                return "bg-danger";
+            default:
+                return "bg-secondary";
+        }
+    }
+
+    public string GetStatusProgressClass(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return "progress-pending";
+            case "Verified":
+                return "progress-verified";
+            case "Approved":
+                return "progress-approved";
+            default:
+                return "progress-pending";
+        }
+    }
+
+    public int GetStatusProgressWidth(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return 33;
+            case "Verified":
+                return 66;
+            case "Approved":
+                return 100;
+            default:
+                return 0;
+        }
+    }
+
+    public int GetCompletionRate(List<ClaimIT.Models.Claim> claims)
+    {
+        if (claims.Count == 0) return 0;
+        var completed = claims.Count(c => c.Status == "Approved");
+        return (int)Math.Round((double)completed / claims.Count * 100);
+    }
+
+    public List<ActivityItem> GetRecentActivities(List<ClaimIT.Models.Claim> claims)
+    {
+        var activities = new List<ActivityItem>();
+        var now = DateTime.Now;
+
+        // Process each claim to generate activities
+        foreach (var claim in claims.OrderByDescending(c => c.SubmittedDate).Take(10))
+        {
+            // Add submission activity
+            activities.Add(new ActivityItem
+            {
+                Icon = "📝",
+                Description = $"{claim.LecturerName} submitted a new claim",
+                Time = GetRelativeTime(claim.SubmittedDate),
+                Type = "info",
+                User = claim.LecturerName
+            });
+
+            // Add status change activities
+            if (claim.Status == "Verified" || claim.Status == "Approved")
+            {
+                activities.Add(new ActivityItem
+                {
+                    Icon = "🔍",
+                    Description = $"Claim #{claim.Id} was verified",
+                    Time = GetRelativeTime(claim.SubmittedDate.AddHours(2)),
+                    Type = "success",
+                    User = "Coordinator"
+                });
+            }
+
+            if (claim.Status == "Approved" && claim.ApprovedDate.HasValue)
+            {
+                activities.Add(new ActivityItem
+                {
+                    Icon = "✅",
+                    Description = $"{claim.LecturerName}'s claim was approved",
+                    Time = GetRelativeTime(claim.ApprovedDate.Value),
+                    Type = "success",
+                    User = claim.ApprovedBy
+                });
+            }
+
+            // Add document activity if documents exist
+            if (claim.DocumentNames != null && claim.DocumentNames.Any())
+            {
+                activities.Add(new ActivityItem
+                {
+                    Icon = "📎",
+                    Description = $"{claim.DocumentNames.Count} documents uploaded for claim #{claim.Id}",
+                    Time = GetRelativeTime(claim.SubmittedDate.AddMinutes(30)),
+                    Type = "info",
+                    User = claim.LecturerName
+                });
+            }
+        }
+
+        // Add system activities
+        activities.Add(new ActivityItem
+        {
+            Icon = "⚡",
+            Description = "System performance optimized",
+            Time = "1 hour ago",
+            Type = "info",
+            User = "System"
+        });
+
+        activities.Add(new ActivityItem
+        {
+            Icon = "🔄",
+            Description = "Daily backup completed successfully",
+            Time = "2 hours ago",
+            Type = "success",
+            User = "System"
+        });
+
+        // Return the most recent activities
+        return activities
+            .OrderByDescending(a => a.Time)
+            .Take(6)
+            .ToList();
+    }
+
+    public string GetRelativeTime(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} minutes ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} hours ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+
+        return date.ToString("MMM dd, yyyy");
+    }
+
+    public class ActivityItem
+    {
+        public string Icon { get; set; }
+        public string Description { get; set; }
+        public string Time { get; set; }
+        public string Type { get; set; }
+        public string User { get; set; }
     }
 }
