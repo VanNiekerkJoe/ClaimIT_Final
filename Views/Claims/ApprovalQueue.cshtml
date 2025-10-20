@@ -1,0 +1,92 @@
+﻿@model List<ClaimIT.Models.Claim>
+
+@{
+    ViewData["Title"] = "Approval Queue";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Approval Queue - Pending Claims</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Lecturer</th>
+                        <th>Hours</th>
+                        <th>Rate</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Documents</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in Model)
+                    {
+                        <tr>
+                            <td>@claim.Id</td>
+                            <td>@claim.LecturerName</td>
+                            <td>@claim.HoursWorked</td>
+                            <td>R @claim.HourlyRate</td>
+                            <td>R @claim.TotalAmount</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(claim.Status)">
+                                    @claim.Status
+                                </span>
+                            </td>
+                            <td>
+                                @if (claim.DocumentNames.Any())
+                                {
+                                    <small>@claim.DocumentNames.Count files</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">No documents</small>
+                                }
+                            </td>
+                            <td>@claim.SubmittedDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                @if (claim.Status == "Pending")
+                                {
+                                    <a href="@Url.Action("Verify", new { id = claim.Id })" class="btn btn-sm btn-warning">Verify</a>
+                                    <a href="@Url.Action("Reject", new { id = claim.Id })" class="btn btn-sm btn-danger">Reject</a>
+                                }
+                                @if (claim.Status == "Verified")
+                                {
+                                    <a href="@Url.Action("Approve", new { id = claim.Id })" class="btn btn-sm btn-success">Approve</a>
+                                    <a href="@Url.Action("Reject", new { id = claim.Id })" class="btn btn-sm btn-danger">Reject</a>
+                                }
+                                <a href="@Url.Action("Details", new { id = claim.Id })" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center text-muted py-4">
+                    <p>No claims pending approval</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning",
+            "Verified" => "bg-info",
+            "Approved" => "bg-success",
+            "Rejected" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

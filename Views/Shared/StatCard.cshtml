@@ -1,0 +1,14 @@
+﻿@model ClaimIT.Models.StatCardViewModel
+
+<div class="stat-card">
+    <div class="d-flex align-items-center">
+        <div class="card-icon">@Model.CardIcon</div>
+        <div class="flex-grow-1">
+            <h5 class="card-title">@Model.CardTitle</h5>
+            <h2 class="card-value" style="color: @Model.ValueColor">@Model.CardValue</h2>
+            <div class="text-end">
+                <span class="card-trend" style="color: @Model.TrendColor">@Model.CardTrend</span>
+            </div>
+        </div>
+    </div>
+</div>
