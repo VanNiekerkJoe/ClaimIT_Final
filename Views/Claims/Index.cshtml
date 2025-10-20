@@ -2,47 +2,6 @@
 
 @{
     ViewData["Title"] = "ClaimIT Dashboard";
-
-    // Create stat cards data
-    var statCards = new List<ClaimIT.Models.StatCardViewModel>
-    {
-        new ClaimIT.Models.StatCardViewModel
-        {
-            CardTitle = "Total Claims",
-            CardValue = Model.Count.ToString(),
-            CardTrend = "+5%",
-            CardIcon = "📊",
-            ValueColor = "#2C3E50",
-            TrendColor = "#27AE60"
-        },
-        new ClaimIT.Models.StatCardViewModel
-        {
-            CardTitle = "Pending Claims",
-            CardValue = Model.Count(c => c.Status == "Pending").ToString(),
-            CardTrend = "-2%",
-            CardIcon = "⏳",
-            ValueColor = "#2C3E50",
-            TrendColor = "#E74C3C"
-        },
-        new ClaimIT.Models.StatCardViewModel
-        {
-            CardTitle = "Approved Claims",
-            CardValue = Model.Count(c => c.Status == "Approved").ToString(),
-            CardTrend = "+10%",
-            CardIcon = "✅",
-            ValueColor = "#2C3E50",
-            TrendColor = "#27AE60"
-        },
-        new ClaimIT.Models.StatCardViewModel
-        {
-            CardTitle = "Verified Claims",
-            CardValue = Model.Count(c => c.Status == "Verified").ToString(),
-            CardTrend = "+3%",
-            CardIcon = "🔍",
-            ValueColor = "#2C3E50",
-            TrendColor = "#3498DB"
-        }
-    };
 }
 
 <div class="dashboard-header">
@@ -53,16 +12,84 @@
 </div>
 
 <div class="container mt-4">
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="row">
         <!-- Main Content Area -->
         <div class="col-lg-9">
+            <!-- Stat Cards Row -->
             <div class="row mb-4">
-                @foreach (var card in statCards)
-                {
-                    <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
-                        <partial name="StatCard" model="card" />
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">📊</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Total Claims</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count</h2>
+                                <div class="text-end">
+                                    <span class="card-trend" style="color: #27AE60">+5%</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                }
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">⏳</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Pending Claims</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Pending")</h2>
+                                <div class="text-end">
+                                    <span class="card-trend" style="color: #E74C3C">-2%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">✅</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Approved Claims</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Approved")</h2>
+                                <div class="text-end">
+                                    <span class="card-trend" style="color: #27AE60">+10%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon">🔍</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">Verified Claims</h5>
+                                <h2 class="card-value" style="color: #2C3E50">@Model.Count(c => c.Status == "Verified")</h2>
+                                <div class="text-end">
+                                    <span class="card-trend" style="color: #3498DB">+3%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="card">
@@ -99,9 +126,27 @@
                                         <td>R @claim.HourlyRate</td>
                                         <td><strong>R @claim.TotalAmount</strong></td>
                                         <td>
-                                            <span class="badge @GetStatusBadgeClass(claim.Status)">
-                                                @claim.Status
-                                            </span>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge @GetStatusBadgeClass(claim.Status) me-2">
+                                                    @claim.Status
+                                                </span>
+                                                @if (claim.Status == "Pending")
+                                                {
+                                                    <div class="status-indicator bg-warning"></div>
+                                                }
+                                                else if (claim.Status == "Verified")
+                                                {
+                                                    <div class="status-indicator bg-info"></div>
+                                                }
+                                                else if (claim.Status == "Approved")
+                                                {
+                                                    <div class="status-indicator bg-success"></div>
+                                                }
+                                                else if (claim.Status == "Rejected")
+                                                {
+                                                    <div class="status-indicator bg-danger"></div>
+                                                }
+                                            </div>
                                         </td>
                                         <td>
                                             @if (claim.DocumentNames != null && claim.DocumentNames.Any())
@@ -124,7 +169,7 @@
                                                 {
                                                     <a href="@Url.Action("Approve", new { id = claim.Id })" class="btn btn-success">Approve</a>
                                                 }
-                                                <a href="#" class="btn btn-outline-secondary">View</a>
+                                                <a href="@Url.Action("Details", new { id = claim.Id })" class="btn btn-outline-secondary">View</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -181,13 +226,18 @@
 @functions {
     public string GetStatusBadgeClass(string status)
     {
-        return status switch
+        switch (status)
         {
-            "Pending" => "badge-pending",
-            "Verified" => "badge-verified",
-            "Approved" => "badge-approved",
-            "Rejected" => "badge-rejected",
-            _ => "bg-secondary"
-        };
+            case "Pending":
+                return "badge-pending";
+            case "Verified":
+                return "badge-verified";
+            case "Approved":
+                return "badge-approved";
+            case "Rejected":
+                return "badge-rejected";
+            default:
+                return "bg-secondary";
+        }
     }
 }

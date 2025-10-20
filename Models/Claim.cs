@@ -1,4 +1,8 @@
-﻿namespace ClaimIT.Models
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace ClaimIT.Models
 {
     public class Claim
     {

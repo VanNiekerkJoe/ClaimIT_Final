@@ -1,0 +1,146 @@
+﻿@model ClaimIT.Models.Claim
+
+@{
+    ViewData["Title"] = "Claim Details";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Claim Details - #@Model.Id</h4>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Claim Information</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Lecturer Name:</th>
+                            <td>@Model.LecturerName</td>
+                        </tr>
+                        <tr>
+                            <th>Hours Worked:</th>
+                            <td>@Model.HoursWorked</td>
+                        </tr>
+                        <tr>
+                            <th>Hourly Rate:</th>
+                            <td>R @Model.HourlyRate</td>
+                        </tr>
+                        <tr>
+                            <th>Total Amount:</th>
+                            <td><strong>R @Model.TotalAmount</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(Model.Status)">
+                                    @Model.Status
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Timeline</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Submitted Date:</th>
+                            <td>@Model.SubmittedDate.ToString("MMM dd, yyyy HH:mm")</td>
+                        </tr>
+                        @if (Model.ApprovedDate.HasValue)
+                        {
+                            <tr>
+                                <th>Approved Date:</th>
+                                <td>@Model.ApprovedDate.Value.ToString("MMM dd, yyyy HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <th>Approved By:</th>
+                                <td>@Model.ApprovedBy</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5>Additional Notes</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            @if (!string.IsNullOrEmpty(Model.Notes))
+                            {
+                                <p>@Model.Notes</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No additional notes provided.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5>Supporting Documents</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            @if (Model.DocumentNames != null && Model.DocumentNames.Any())
+                            {
+                                <ul class="list-group">
+                                    @foreach (var document in Model.DocumentNames)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>@document</span>
+                                            <span class="badge bg-primary rounded-pill">Uploaded</span>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No supporting documents uploaded.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex gap-2">
+                        @if (Model.Status == "Pending")
+                        {
+                            <a href="@Url.Action("Verify", new { id = Model.Id })" class="btn btn-warning">Verify Claim</a>
+                        }
+                        @if (Model.Status == "Verified")
+                        {
+                            <a href="@Url.Action("Approve", new { id = Model.Id })" class="btn btn-success">Approve Claim</a>
+                        }
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Back to List</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return "badge-pending";
+            case "Verified":
+                return "badge-verified";
+            case "Approved":
+                return "badge-approved";
+            case "Rejected":
+                return "badge-rejected";
+            default:
+                return "bg-secondary";
+        }
+    }
+}

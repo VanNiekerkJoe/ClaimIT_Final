@@ -39,7 +39,7 @@
                                 </span>
                             </td>
                             <td>
-                                @if (claim.DocumentNames.Any())
+                                @if (claim.DocumentNames != null && claim.DocumentNames.Any())
                                 {
                                     <small>@claim.DocumentNames.Count files</small>
                                 }
@@ -80,13 +80,18 @@
 @functions {
     public string GetStatusBadgeClass(string status)
     {
-        return status switch
+        switch (status)
         {
-            "Pending" => "bg-warning",
-            "Verified" => "bg-info",
-            "Approved" => "bg-success",
-            "Rejected" => "bg-danger",
-            _ => "bg-secondary"
-        };
+            case "Pending":
+                return "badge-pending";
+            case "Verified":
+                return "badge-verified";
+            case "Approved":
+                return "badge-approved";
+            case "Rejected":
+                return "badge-rejected";
+            default:
+                return "bg-secondary";
+        }
     }
 }

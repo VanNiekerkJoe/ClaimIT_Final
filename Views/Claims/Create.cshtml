@@ -16,15 +16,15 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="LecturerName" class="form-label">Lecturer Name</label>
+                                    <label asp-for="LecturerName" class="form-label">Lecturer Name *</label>
                                     <input asp-for="LecturerName" class="form-control" />
                                     <span asp-validation-for="LecturerName" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="HoursWorked" class="form-label">Hours Worked</label>
-                                    <input asp-for="HoursWorked" class="form-control" type="number" step="0.5" />
+                                    <label asp-for="HoursWorked" class="form-label">Hours Worked *</label>
+                                    <input asp-for="HoursWorked" class="form-control" type="number" step="0.5" min="1" max="200" />
                                     <span asp-validation-for="HoursWorked" class="text-danger"></span>
                                 </div>
                             </div>
@@ -33,8 +33,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="HourlyRate" class="form-label">Hourly Rate (R)</label>
-                                    <input asp-for="HourlyRate" class="form-control" type="number" step="0.01" />
+                                    <label asp-for="HourlyRate" class="form-label">Hourly Rate (R) *</label>
+                                    <input asp-for="HourlyRate" class="form-control" type="number" step="0.01" min="20" max="500" />
                                     <span asp-validation-for="HourlyRate" class="text-danger"></span>
                                 </div>
                             </div>
@@ -48,16 +48,16 @@
 
                         <div class="form-group mb-3">
                             <label asp-for="Notes" class="form-label">Additional Notes</label>
-                            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Enter any additional information about your claim..."></textarea>
                             <span asp-validation-for="Notes" class="text-danger"></span>
                         </div>
 
                         <div class="form-group mb-3">
                             <label class="form-label">Supporting Documents</label>
                             <input type="file" name="documents" class="form-control" multiple
-                                   accept=".pdf,.docx,.xlsx,.jpg,.png" />
+                                   accept=".pdf,.docx,.xlsx,.jpg,.png,.jpeg" />
                             <small class="form-text text-muted">
-                                Upload supporting documents (PDF, Word, Excel, Images). Max file size: 5MB
+                                Upload supporting documents (PDF, Word, Excel, Images). Max file size: 5MB per file.
                             </small>
                         </div>
 

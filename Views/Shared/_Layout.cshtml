@@ -38,9 +38,9 @@
             min-height: 150px;
         }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
+            .stat-card:hover {
+                transform: translateY(-2px);
+            }
 
         .card-icon {
             font-size: 2.5rem;
@@ -82,10 +82,10 @@
             padding: 10px 20px;
         }
 
-        .btn-primary:hover {
-            background-color: #2980B9;
-            border-color: #2980B9;
-        }
+            .btn-primary:hover {
+                background-color: #2980B9;
+                border-color: #2980B9;
+            }
 
         .dashboard-header {
             background: linear-gradient(135deg, var(--primary-color), #34495E);
@@ -138,6 +138,37 @@
             font-size: 16px;
             font-weight: 500;
         }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .progress {
+            height: 20px;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -176,9 +207,13 @@
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <span>Claim Status Tracker</span>
+                    <div class="progress mt-1" style="width: 200px; display: inline-block; margin-left: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 60%;"
+                             aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
                 </div>
                 <div class="col-md-6 text-end">
-                    <span id="footerStatus">Processing claims...</span>
+                    <span id="footerStatus">Processing: 60% of claims completed</span>
                 </div>
             </div>
         </div>
