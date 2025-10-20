@@ -15,7 +15,8 @@ namespace ClaimIT.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            // Redirect to Claims controller as the main dashboard
+            return RedirectToAction("Index", "Claims");
         }
 
         public IActionResult Privacy()

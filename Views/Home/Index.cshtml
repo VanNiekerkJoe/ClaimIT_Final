@@ -3,6 +3,15 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Welcome to ClaimIT</h1>
+    <p>Redirecting to dashboard...</p>
 </div>
+
+@section Scripts {
+    <script>
+        // Redirect to Claims dashboard
+        setTimeout(() => {
+            window.location.href = '@Url.Action("Index", "Claims")';
+        }, 1000);
+    </script>
+}

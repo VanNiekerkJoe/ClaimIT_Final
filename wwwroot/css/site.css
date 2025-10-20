@@ -1,35 +1,105 @@
-.stat-card {
-    background: white;
+/* File Upload Styles */
+.file-upload-area {
+    border: 2px dashed #dee2e6;
     border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border: none;
-    transition: transform 0.2s;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    background: #f8f9fa;
 }
 
-    .stat-card:hover {
-        transform: translateY(-2px);
+    .file-upload-area.dragover {
+        border-color: #3498db;
+        background: #e3f2fd;
     }
 
-.card-icon {
-    font-size: 2.5rem;
-    margin-right: 15px;
-}
-
-.card-title {
-    font-size: 0.9rem;
+.upload-placeholder {
+    cursor: pointer;
     color: #6c757d;
-    margin-bottom: 5px;
-    font-weight: 600;
 }
 
-.card-value {
+    .upload-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+.file-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+}
+
+.file-list {
+    margin-top: 20px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+    .file-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+.file-preview-image img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.file-preview-pdf,
+.file-preview-generic {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 2rem;
-    font-weight: 700;
-    color: #2C3E50;
-    margin-bottom: 0;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 4px;
 }
 
-.dashboard-header {
-    border-radius: 0 0 10px 10px;
+.file-preview-pdf {
+    color: #dc3545;
 }
+
+.file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.file-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.remove-file {
+    flex-shrink: 0;
+}
+
+/* Bootstrap Icons */
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css");

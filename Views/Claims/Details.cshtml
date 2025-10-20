@@ -11,75 +11,7 @@
             <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Back to Dashboard</a>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Claim Information</h5>
-                    <table class="table table-bordered">
-                        <tr>
-                            <th>Lecturer Name:</th>
-                            <td>@Model.LecturerName</td>
-                        </tr>
-                        <tr>
-                            <th>Hours Worked:</th>
-                            <td>@Model.HoursWorked</td>
-                        </tr>
-                        <tr>
-                            <th>Hourly Rate:</th>
-                            <td>R @Model.HourlyRate</td>
-                        </tr>
-                        <tr>
-                            <th>Total Amount:</th>
-                            <td><strong>R @Model.TotalAmount</strong></td>
-                        </tr>
-                        <tr>
-                            <th>Status:</th>
-                            <td>
-                                <span class="badge @GetStatusBadgeClass(Model.Status)">
-                                    @Model.Status
-                                </span>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <h5>Timeline</h5>
-                    <table class="table table-bordered">
-                        <tr>
-                            <th>Submitted Date:</th>
-                            <td>@Model.SubmittedDate.ToString("MMM dd, yyyy HH:mm")</td>
-                        </tr>
-                        @if (Model.ApprovedDate.HasValue)
-                        {
-                            <tr>
-                                <th>Approved Date:</th>
-                                <td>@Model.ApprovedDate.Value.ToString("MMM dd, yyyy HH:mm")</td>
-                            </tr>
-                            <tr>
-                                <th>Approved By:</th>
-                                <td>@Model.ApprovedBy</td>
-                            </tr>
-                        }
-                    </table>
-                </div>
-            </div>
-
-            <div class="row mt-4">
-                <div class="col-12">
-                    <h5>Additional Notes</h5>
-                    <div class="card">
-                        <div class="card-body">
-                            @if (!string.IsNullOrEmpty(Model.Notes))
-                            {
-                                <p>@Model.Notes</p>
-                            }
-                            else
-                            {
-                                <p class="text-muted">No additional notes provided.</p>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- ... existing claim information ... -->
 
             <div class="row mt-4">
                 <div class="col-12">
@@ -88,15 +20,62 @@
                         <div class="card-body">
                             @if (Model.DocumentNames != null && Model.DocumentNames.Any())
                             {
-                                <ul class="list-group">
-                                    @foreach (var document in Model.DocumentNames)
+                                <div class="document-gallery">
+                                    @for (int i = 0; i < Model.DocumentNames.Count; i++)
                                     {
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>@document</span>
-                                            <span class="badge bg-primary rounded-pill">Uploaded</span>
-                                        </li>
+                                        var documentName = Model.DocumentNames[i];
+                                        var documentPath = Model.DocumentPaths[i];
+                                        var extension = System.IO.Path.GetExtension(documentName).ToLower();
+                                        var isImage = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" }.Contains(extension);
+                                        var isPdf = extension == ".pdf";
+
+                                        <div class="document-item">
+                                            <div class="document-preview">
+                                                @if (isImage)
+                                                {
+                                                    <div class="image-preview">
+                                                        <img src="@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })"
+                                                             alt="@documentName"
+                                                             class="img-thumbnail document-image"
+                                                             data-bs-toggle="modal"
+                                                             data-bs-target="#imageModal"
+                                                             onclick="showImageInModal('@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })', '@documentName')">
+                                                    </div>
+                                                }
+                                                else if (isPdf)
+                                                {
+                                                    <div class="pdf-preview">
+                                                        <div class="pdf-icon"
+                                                             onclick="openPdf('@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })')">
+                                                            <i class="bi bi-file-earmark-pdf"></i>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="file-preview">
+                                                        <div class="file-icon">
+                                                            <i class="bi bi-file-earmark"></i>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="document-info">
+                                                <small class="document-name">@documentName</small>
+                                                <div class="document-actions">
+                                                    <a href="@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })"
+                                                       class="btn btn-sm btn-outline-primary" target="_blank" title="View">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("DownloadDocument", "Claims", new { fileName = documentPath, originalName = documentName })"
+                                                       class="btn btn-sm btn-outline-success" title="Download">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
                                     }
-                                </ul>
+                                </div>
                             }
                             else
                             {
@@ -107,40 +86,160 @@
                 </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="d-flex gap-2">
-                        @if (Model.Status == "Pending")
-                        {
-                            <a href="@Url.Action("Verify", new { id = Model.Id })" class="btn btn-warning">Verify Claim</a>
-                        }
-                        @if (Model.Status == "Verified")
-                        {
-                            <a href="@Url.Action("Approve", new { id = Model.Id })" class="btn btn-success">Approve Claim</a>
-                        }
-                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Back to List</a>
-                    </div>
-                </div>
+            <!-- ... rest of the view ... -->
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Document Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="" class="img-fluid">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="downloadImage" class="btn btn-primary">Download</a>
             </div>
         </div>
     </div>
 </div>
 
-@functions {
-    public string GetStatusBadgeClass(string status)
-    {
-        switch (status)
-        {
-            case "Pending":
-                return "badge-pending";
-            case "Verified":
-                return "badge-verified";
-            case "Approved":
-                return "badge-approved";
-            case "Rejected":
-                return "badge-rejected";
-            default:
-                return "bg-secondary";
+@section Scripts {
+    <script>
+        function showImageInModal(imageUrl, fileName) {
+            document.getElementById('modalImage').src = imageUrl;
+            document.getElementById('modalImage').alt = fileName;
+            document.getElementById('downloadImage').href = '@Url.Action("DownloadDocument", "Claims")' +
+                '?fileName=' + encodeURIComponent(imageUrl.split('/').pop()) +
+                '&originalName=' + encodeURIComponent(fileName);
+        }
+
+        function openPdf(pdfUrl) {
+            window.open(pdfUrl, '_blank');
+        }
+
+        // Add hover effects for documents
+        document.addEventListener('DOMContentLoaded', function() {
+            const documentItems = document.querySelectorAll('.document-item');
+            documentItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+                });
+
+                item.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    .document-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .document-item {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .document-preview {
+        margin-bottom: 10px;
+    }
+
+    .document-image {
+        max-width: 100%;
+        max-height: 120px;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+        .document-image:hover {
+            transform: scale(1.05);
+        }
+
+    .pdf-preview, .file-preview {
+        font-size: 3rem;
+        color: #6c757d;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+        .pdf-preview:hover {
+            color: #dc3545;
+        }
+
+        .file-preview:hover {
+            color: #0d6efd;
+        }
+
+    .document-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .document-name {
+        word-break: break-word;
+        font-weight: 500;
+    }
+
+    .document-actions {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .bi {
+        font-size: 1rem;
+    }
+
+    /* Modal enhancements */
+    .modal-content {
+        border-radius: 10px;
+        border: none;
+    }
+
+    .modal-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .modal-body img {
+        max-height: 70vh;
+        object-fit: contain;
+    }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .document-gallery {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .document-item {
+            padding: 10px;
+        }
+
+        .pdf-preview, .file-preview {
+            font-size: 2rem;
         }
     }
-}
+</style>
