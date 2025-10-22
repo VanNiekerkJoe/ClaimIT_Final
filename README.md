@@ -298,5 +298,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ using ASP.NET Core 9.0**
+
 
