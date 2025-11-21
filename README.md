@@ -303,7 +303,7 @@ dotnet test
 **Student Information:**
 - **Name:** Joe Leo Van Niekerk
 - **Student Code:** ST10445055
-- **Institution:** Eduvos
+- **Institution:** Emeris
 - **Course:** PROG6212 - Advanced Programming
 - **Academic Year:** 2025
 
