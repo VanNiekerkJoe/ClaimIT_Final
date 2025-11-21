@@ -2,16 +2,18 @@
 using Microsoft.AspNetCore.Mvc;
 using ClaimIT.Data;
 using ClaimIT.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClaimIT.Controllers
 {
     public class HRController : Controller
     {
-        private readonly EnhancedContext _context;
+        private readonly ClaimITContext _context;  // Changed from EnhancedContext
 
-        public HRController()
+        // This is the correct way – dependency injection
+        public HRController(ClaimITContext context)
         {
-            _context = new EnhancedContext();
+            _context = context;
         }
 
         private bool IsAuthenticatedHR()
@@ -22,20 +24,16 @@ namespace ClaimIT.Controllers
         public IActionResult Index()
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
-            var users = _context.Users;
+            var users = _context.Users.ToList();
             return View(users);
         }
 
         public IActionResult CreateUser()
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
             return View();
         }
@@ -45,34 +43,34 @@ namespace ClaimIT.Controllers
         public IActionResult CreateUser(User user)
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(user);
+
+            // Check if email already exists
+            if (_context.Users.Any(u => u.Email == user.Email))
             {
-                // Check if email already exists
-                var existingUser = _context.GetUserByEmail(user.Email);
-                if (existingUser != null)
-                {
-                    ModelState.AddModelError("Email", "Email address already exists.");
-                    return View(user);
-                }
-
-                _context.AddUser(user);
-                TempData["SuccessMessage"] = $"User {user.FullName} created successfully!";
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("Email", "Email address already exists.");
+                return View(user);
             }
 
-            return View(user);
+            // Set default values
+            user.PasswordHash = user.PasswordHash; // You can hash later if you want
+            user.CreatedDate = DateTime.Now;
+            user.IsActive = true;
+
+            _context.Users.Add(user);
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"User {user.FullName} created successfully!";
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult EditUser(int id)
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
             var user = _context.Users.FirstOrDefault(u => u.Id == id);
             if (user == null)
@@ -80,7 +78,6 @@ namespace ClaimIT.Controllers
                 TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction(nameof(Index));
             }
-
             return View(user);
         }
 
@@ -89,34 +86,29 @@ namespace ClaimIT.Controllers
         public IActionResult EditUser(User user)
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
-            if (ModelState.IsValid)
-            {
-                _context.UpdateUser(user);
-                TempData["SuccessMessage"] = $"User {user.FullName} updated successfully!";
-                return RedirectToAction(nameof(Index));
-            }
+            if (!ModelState.IsValid)
+                return View(user);
 
-            return View(user);
+            _context.Users.Update(user);
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"User {user.FullName} updated successfully!";
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Reports()
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
             var model = new ReportViewModel
             {
                 StartDate = DateTime.Now.AddMonths(-1),
                 EndDate = DateTime.Now,
-                Claims = _context.Claims
+                Claims = _context.Claims.ToList()
             };
-
             return View(model);
         }
 
@@ -124,11 +116,11 @@ namespace ClaimIT.Controllers
         public IActionResult GenerateReport(ReportViewModel model)
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
-            model.Claims = _context.GetClaimsByDateRange(model.StartDate, model.EndDate);
+            model.Claims = _context.Claims
+                .Where(c => c.SubmittedDate >= model.StartDate && c.SubmittedDate <= model.EndDate)
+                .ToList();
 
             if (model.ReportType == "Monthly")
             {
@@ -138,17 +130,15 @@ namespace ClaimIT.Controllers
                     .ToList();
             }
 
-            TempData["SuccessMessage"] = $"Report generated for {model.StartDate:yyyy-MM-dd} to {model.EndDate:yyyy-MM-dd}. Found {model.TotalClaims} claims totaling R {model.TotalAmount:N2}";
-
+            TempData["SuccessMessage"] = $"Report generated for {model.StartDate:yyyy-MM-dd} to {model.EndDate:yyyy-MM-dd}. " +
+                                        $"Found {model.TotalClaims} claims totaling R {model.TotalAmount:N2}";
             return View("Reports", model);
         }
 
         public IActionResult GenerateInvoice(int claimId)
         {
             if (!IsAuthenticatedHR())
-            {
                 return RedirectToAction("AccessDenied", "Auth");
-            }
 
             var claim = _context.Claims.FirstOrDefault(c => c.Id == claimId);
             if (claim == null)
@@ -157,12 +147,9 @@ namespace ClaimIT.Controllers
                 return RedirectToAction("Reports");
             }
 
-            // In a real application, you would generate a PDF invoice here
-            // For this demo, we'll just show a preview
             ViewBag.InvoiceNumber = $"INV-{claim.Id:0000}-{DateTime.Now:yyyyMMdd}";
             ViewBag.InvoiceDate = DateTime.Now.ToString("yyyy-MM-dd");
             ViewBag.DueDate = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd");
-
             return View(claim);
         }
     }

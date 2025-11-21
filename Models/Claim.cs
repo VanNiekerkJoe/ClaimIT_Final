@@ -1,5 +1,7 @@
 ﻿// Models/Claim.cs
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace ClaimIT.Models
 {
@@ -7,38 +9,50 @@ namespace ClaimIT.Models
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Lecturer name is required")]
+        [Required]
         public string LecturerName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Lecturer email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email address")]
+        [Required]
         public string LecturerEmail { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Hours worked is required")]
-        [Range(1, 200, ErrorMessage = "Hours must be between 1 and 200")]
+        [Required]
         public decimal HoursWorked { get; set; }
 
-        [Required(ErrorMessage = "Hourly rate is required")]
-        [Range(20, 500, ErrorMessage = "Hourly rate must be between R20 and R500")]
+        [Required]
         public decimal HourlyRate { get; set; }
 
         public decimal TotalAmount => HoursWorked * HourlyRate;
-        public string Notes { get; set; } = string.Empty;
-        public string Status { get; set; } = "Pending";
-        public List<string> DocumentNames { get; set; } = new List<string>();
-        public List<string> DocumentPaths { get; set; } = new List<string>();
-        public DateTime SubmittedDate { get; set; } = DateTime.Now;
-        public DateTime? ApprovedDate { get; set; }
-        public string ApprovedBy { get; set; } = string.Empty;
-    }
 
-    public class ClaimDocument
-    {
-        public int Id { get; set; }
-        public string FileName { get; set; } = string.Empty;
-        public string StoredFileName { get; set; } = string.Empty;
-        public string ContentType { get; set; } = string.Empty;
-        public long FileSize { get; set; }
-        public int ClaimId { get; set; }
+        public string? Notes { get; set; }
+
+        public string Status { get; set; } = "Pending"; // Pending, Verified, Approved, Rejected
+
+        public DateTime SubmittedDate { get; set; } = DateTime.Now;
+        public DateTime? VerifiedDate { get; set; }
+        public DateTime? ApprovedDate { get; set; }
+        public string? ApprovedBy { get; set; }
+
+        // Stored as JSON in DB
+        public string? DocumentNamesJson { get; set; }
+        public string? DocumentPathsJson { get; set; }
+
+        // Helper properties (not mapped to DB)
+        [NotMapped]
+        public List<string>? DocumentNames
+        {
+            get => string.IsNullOrEmpty(DocumentNamesJson)
+                ? null
+                : JsonSerializer.Deserialize<List<string>>(DocumentNamesJson);
+            set => DocumentNamesJson = value == null ? null : JsonSerializer.Serialize(value);
+        }
+
+        [NotMapped]
+        public List<string>? DocumentPaths
+        {
+            get => string.IsNullOrEmpty(DocumentPathsJson)
+                    ? null
+                    : JsonSerializer.Deserialize<List<string>>(DocumentPathsJson);
+            set => DocumentPathsJson = value == null ? null : JsonSerializer.Serialize(value);
+        }
     }
 }

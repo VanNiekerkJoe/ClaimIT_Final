@@ -1,13 +1,14 @@
 // Program.cs
 using Microsoft.EntityFrameworkCore;
-using ClaimIT.Data;
+using ClaimIT.Data;                    // This brings in ClaimITContext
+using ClaimIT.Models;                   // (Optional – only if you use models here)
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllersWithViews();
 
-// Add session support
+// Session support (required for login)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -16,20 +17,23 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Register our enhanced context
-builder.Services.AddSingleton<EnhancedContext>();
+// REGISTER THE REAL DATABASE CONTEXT (THIS IS THE MOST IMPORTANT LINE)
+builder.Services.AddDbContext<ClaimITContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// DELETE THIS LINE COMPLETELY (you had it before):
+// builder.Services.AddSingleton<EnhancedContext>();
 
 var app = builder.Build();
 
-// Ensure uploads directory exists
+// Create uploads folder if not exists
 var uploadsPath = Path.Combine(app.Environment.WebRootPath, "uploads");
 if (!Directory.Exists(uploadsPath))
 {
     Directory.CreateDirectory(uploadsPath);
-    Console.WriteLine($"Created uploads directory: {uploadsPath}");
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -42,13 +46,12 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
+app.UseSession();           // Session must come BEFORE UseAuthorization
 app.UseAuthorization();
 
-// Use session
-app.UseSession();
-
-// Simple and clear route mapping
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");

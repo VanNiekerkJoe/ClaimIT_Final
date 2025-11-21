@@ -2,25 +2,25 @@
 using Microsoft.AspNetCore.Mvc;
 using ClaimIT.Data;
 using ClaimIT.Models;
-using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClaimIT.Controllers
 {
     public class AuthController : Controller
     {
-        private readonly EnhancedContext _context;
+        private readonly ClaimITContext _context;
 
-        public AuthController()
+        // Dependency injection — this is the correct way
+        public AuthController(ClaimITContext context)
         {
-            _context = new EnhancedContext();
+            _context = context;
         }
 
         public IActionResult Login()
         {
             if (HttpContext.Session.GetString("UserEmail") != null)
-            {
                 return RedirectToAction("Index", "Claims");
-            }
+
             return View();
         }
 
@@ -28,25 +28,24 @@ namespace ClaimIT.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Login(LoginViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                var user = _context.AuthenticateUser(model.Email, model.Password);
-                if (user != null)
-                {
-                    // Set session variables
-                    HttpContext.Session.SetString("UserEmail", user.Email);
-                    HttpContext.Session.SetString("UserName", user.FullName);
-                    HttpContext.Session.SetString("UserRole", user.Role);
-                    HttpContext.Session.SetInt32("UserId", user.Id);
+            if (!ModelState.IsValid) return View(model);
 
-                    TempData["SuccessMessage"] = $"Welcome back, {user.FullName}!";
-                    return RedirectToAction("Index", "Claims");
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Invalid email or password.");
-                }
+            // REAL database check
+            var user = _context.Users
+                .FirstOrDefault(u => u.Email == model.Email && u.PasswordHash == model.Password);
+
+            if (user != null)
+            {
+                HttpContext.Session.SetString("UserEmail", user.Email);
+                HttpContext.Session.SetString("UserName", user.FullName);
+                HttpContext.Session.SetString("UserRole", user.Role);
+                HttpContext.Session.SetInt32("UserId", user.Id);
+
+                TempData["SuccessMessage"] = $"Welcome back, {user.FullName}!";
+                return RedirectToAction("Index", "Claims");
             }
+
+            ModelState.AddModelError("", "Invalid email or password.");
             return View(model);
         }
 
@@ -57,9 +56,6 @@ namespace ClaimIT.Controllers
             return RedirectToAction("Login");
         }
 
-        public IActionResult AccessDenied()
-        {
-            return View();
-        }
+        public IActionResult AccessDenied() => View();
     }
 }
