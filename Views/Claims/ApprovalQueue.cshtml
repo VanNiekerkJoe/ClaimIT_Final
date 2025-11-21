@@ -1,97 +1,206 @@
 ﻿@model List<ClaimIT.Models.Claim>
-
 @{
     ViewData["Title"] = "Approval Queue";
+    var search = ViewBag.Search as string ?? "";
+    var statusFilter = ViewBag.StatusFilter as string ?? "";
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalPending = ViewBag.TotalPending as int? ?? 0;
 }
 
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h4 class="mb-0">Approval Queue - Pending Claims</h4>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold text-primary">
+                Approval Queue
+            </h2>
+            <p class="text-muted mb-0">@totalPending claim(s) pending review</p>
         </div>
-        <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Lecturer</th>
-                        <th>Hours</th>
-                        <th>Rate</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Documents</th>
-                        <th>Submitted</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var claim in Model)
-                    {
-                        <tr>
-                            <td>@claim.Id</td>
-                            <td>@claim.LecturerName</td>
-                            <td>@claim.HoursWorked</td>
-                            <td>R @claim.HourlyRate</td>
-                            <td>R @claim.TotalAmount</td>
-                            <td>
-                                <span class="badge @GetStatusBadgeClass(claim.Status)">
-                                    @claim.Status
-                                </span>
-                            </td>
-                            <td>
-                                @if (claim.DocumentNames != null && claim.DocumentNames.Any())
-                                {
-                                    <small>@claim.DocumentNames.Count files</small>
-                                }
-                                else
-                                {
-                                    <small class="text-muted">No documents</small>
-                                }
-                            </td>
-                            <td>@claim.SubmittedDate.ToString("MMM dd, yyyy")</td>
-                            <td>
-                                @if (claim.Status == "Pending")
-                                {
-                                    <a href="@Url.Action("Verify", new { id = claim.Id })" class="btn btn-sm btn-warning">Verify</a>
-                                    <a href="@Url.Action("Reject", new { id = claim.Id })" class="btn btn-sm btn-danger">Reject</a>
-                                }
-                                @if (claim.Status == "Verified")
-                                {
-                                    <a href="@Url.Action("Approve", new { id = claim.Id })" class="btn btn-sm btn-success">Approve</a>
-                                    <a href="@Url.Action("Reject", new { id = claim.Id })" class="btn btn-sm btn-danger">Reject</a>
-                                }
-                                <a href="@Url.Action("Details", new { id = claim.Id })" class="btn btn-sm btn-outline-primary">View</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <a asp-action="ApprovalQueue" class="btn btn-outline-secondary">Refresh</a>
+    </div>
 
-            @if (!Model.Any())
+    <!-- Search & Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-lg-6">
+                    <input type="text" name="search" value="@search" class="form-control"
+                           placeholder="Search by lecturer name, email, or claim ID..." />
+                </div>
+                <div class="col-lg-3">
+                    <select name="statusFilter" class="form-select">
+                        <option value="">All Pending/Verified</option>
+                        <option value="Pending" selected="@(statusFilter == "Pending")">Pending Only</option>
+                        <option value="Verified" selected="@(statusFilter == "Verified")">Verified Only</option>
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Approve Form -->
+    <form asp-action="BulkApprove" method="post" id="bulkForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card shadow">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <input type="checkbox" id="selectAll" class="form-check-input me-2" />
+                    <label class="form-check-label fw-bold" for="selectAll">
+                        Select All (@Model.Count displayed)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-success">Approve Selected</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:40px"></th>
+                            <th>ID</th>
+                            <th>Lecturer</th>
+                            <th>Hours</th>
+                            <th>Rate</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Files</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox display-1 d-block mb-3"></i>
+                                    <h5>No claims to review</h5>
+                                    <p>All caught up!</p>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var claim in Model)
+                            {
+                                var docCount = 0;
+                                if (!string.IsNullOrEmpty(claim.DocumentNamesJson))
+                                {
+                                    try
+                                    {
+                                        var names = System.Text.Json.JsonSerializer.Deserialize<List<string>>(claim.DocumentNamesJson);
+                                        docCount = names?.Count ?? 0;
+                                    }
+                                    catch { }
+                                }
+
+                                <tr class="claim-row" style="cursor:pointer">
+                                    <td>
+                                        <input type="checkbox" name="selectedClaims" value="@claim.Id" class="form-check-input claim-checkbox" />
+                                    </td>
+                                    <td><strong>#@claim.Id</strong></td>
+                                    <td>
+                                        <div>
+                                            <strong>@claim.LecturerName</strong><br />
+                                            <small class="text-muted">@claim.LecturerEmail</small>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-info">@claim.HoursWorked h</span></td>
+                                    <td>R @claim.HourlyRate.ToString("N2")</td>
+                                    <td class="fw-bold text-success">R @claim.TotalAmount.ToString("N2")</td>
+                                    <td>
+                                        <span class="badge @(claim.Status == "Pending" ? "badge-pending" : "badge-verified")">
+                                            @claim.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (docCount > 0)
+                                        {
+                                            <i class="bi bi-paperclip text-success"></i> 
+                                            @docCount
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>@claim.SubmittedDate.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@claim.Id" class="btn btn-outline-primary">View</a>
+                                            @if (claim.Status == "Pending")
+                                            {
+                                                <a asp-action="Verify" asp-route-id="@claim.Id" class="btn btn-warning">Verify</a>
+                                                <a asp-action="Reject" asp-route-id="@claim.Id" class="btn btn-danger">Reject</a>
+                                            }
+                                            @if (claim.Status == "Verified")
+                                            {
+                                                <a asp-action="Approve" asp-route-id="@claim.Id" class="btn btn-success">Approve</a>
+                                                <a asp-action="Reject" asp-route-id="@claim.Id" class="btn btn-danger">Reject</a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages > 1)
             {
-                <div class="text-center text-muted py-4">
-                    <p>No claims pending approval</p>
+                <div class="card-footer bg-light">
+                    <nav>
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("ApprovalQueue", new { page = currentPage - 1, search, statusFilter })">Previous</a>
+                            </li>
+                            @for (int i = 1; i <= totalPages; i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("ApprovalQueue", new { page = i, search, statusFilter })">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("ApprovalQueue", new { page = currentPage + 1, search, statusFilter })">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
                 </div>
             }
         </div>
-    </div>
+    </form>
 </div>
 
-@functions {
-    public string GetStatusBadgeClass(string status)
-    {
-        switch (status)
-        {
-            case "Pending":
-                return "badge-pending";
-            case "Verified":
-                return "badge-verified";
-            case "Approved":
-                return "badge-approved";
-            case "Rejected":
-                return "badge-rejected";
-            default:
-                return "bg-secondary";
-        }
-    }
+@section Scripts {
+    <script>
+        document.getElementById('selectAll')?.addEventListener('change', function () {
+            document.querySelectorAll('.claim-checkbox').forEach(cb => cb.checked = this.checked);
+        });
+
+        document.querySelectorAll('.claim-row').forEach(row => {
+            row.addEventListener('click', function (e) {
+                if (!e.target.closest('a, button, input')) {
+                    const cb = this.querySelector('.claim-checkbox');
+                    if (cb) cb.checked = !cb.checked;
+                }
+            });
+        });
+
+        document.getElementById('bulkForm')?.addEventListener('submit', function (e) {
+            const checked = document.querySelectorAll('.claim-checkbox:checked').length;
+            if (checked === 0) {
+                e.preventDefault();
+                toastr.warning("Please select at least one claim.");
+            } else if (!confirm(`Approve ${checked} claim(s)?`)) {
+                e.preventDefault();
+            }
+        });
+    </script>
 }

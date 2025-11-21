@@ -18,14 +18,17 @@ namespace ClaimIT.Controllers
             _environment = environment;
         }
 
-        // Helper methods
+        // Helper Properties (Session-based auth)
         private string UserEmail => HttpContext.Session.GetString("UserEmail") ?? "";
         private string UserName => HttpContext.Session.GetString("UserName") ?? "";
         private string UserRole => HttpContext.Session.GetString("UserRole") ?? "";
-
         private bool IsAuthenticated() => !string.IsNullOrEmpty(UserEmail);
         private bool HasRole(string role) => UserRole == role;
+        private bool IsCoordinatorOrManager => HasRole("Coordinator") || HasRole("Manager");
 
+        // ==================================================================
+        // 1. MAIN CLAIMS LIST
+        // ==================================================================
         public IActionResult Index()
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "Auth");
@@ -33,9 +36,7 @@ namespace ClaimIT.Controllers
             var claims = UserRole switch
             {
                 "Lecturer" => _context.Claims.Where(c => c.LecturerEmail == UserEmail),
-                "Coordinator" or "Manager" => _context.Claims,
-                "HR" => _context.Claims,
-                _ => _context.Claims.Take(0)
+                _ => _context.Claims
             };
 
             var claimList = claims.OrderByDescending(c => c.SubmittedDate).ToList();
@@ -52,6 +53,97 @@ namespace ClaimIT.Controllers
             return View(claimList);
         }
 
+        // ==================================================================
+        // 2. APPROVAL QUEUE – Fixed: No .Include(c => c.User), No 'Title'
+        // ==================================================================
+        [HttpGet]
+        public async Task<IActionResult> ApprovalQueue(string search, string statusFilter, int page = 1)
+        {
+            if (!IsAuthenticated() || !IsCoordinatorOrManager)
+                return RedirectToAction("AccessDenied", "Auth");
+
+            const int pageSize = 15;
+
+            var query = _context.Claims
+                .Where(c => c.Status == "Pending" || c.Status == "Verified")
+                .AsQueryable();
+
+            // Search – using only real fields
+            if (!string.IsNullOrEmpty(search))
+            {
+                search = search.Trim().ToLower();
+                query = query.Where(c =>
+                    c.LecturerName.ToLower().Contains(search) ||
+                    c.LecturerEmail.ToLower().Contains(search) ||
+                    c.Id.ToString().Contains(search));
+            }
+
+            // Status Filter
+            if (!string.IsNullOrEmpty(statusFilter) && (statusFilter == "Pending" || statusFilter == "Verified"))
+            {
+                query = query.Where(c => c.Status == statusFilter);
+            }
+
+            var total = await query.CountAsync();
+
+            var claims = await query
+                .OrderByDescending(c => c.SubmittedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.StatusFilter = statusFilter;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
+            ViewBag.TotalPending = await _context.Claims.CountAsync(c => c.Status == "Pending" || c.Status == "Verified");
+
+            return View(claims);
+        }
+
+        // ==================================================================
+        // 3. BULK APPROVE – Works perfectly
+        // ==================================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkApprove(List<int> selectedClaims)
+        {
+            if (!IsAuthenticated() || !IsCoordinatorOrManager)
+                return RedirectToAction("AccessDenied", "Auth");
+
+            if (selectedClaims == null || !selectedClaims.Any())
+            {
+                TempData["Warning"] = "No claims were selected.";
+                return RedirectToAction("ApprovalQueue");
+            }
+
+            var claims = await _context.Claims
+                .Where(c => selectedClaims.Contains(c.Id) && (c.Status == "Pending" || c.Status == "Verified"))
+                .ToListAsync();
+
+            foreach (var claim in claims)
+            {
+                claim.Status = "Approved";
+                claim.ApprovedDate = DateTime.Now;
+
+                _context.ClaimAudits.Add(new ClaimAudit
+                {
+                    ClaimId = claim.Id,
+                    Action = "Approved (Bulk)",
+                    PerformedBy = UserName,
+                    PerformedByRole = UserRole,
+                    Timestamp = DateTime.Now
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"{claims.Count} claim(s) approved successfully!";
+            return RedirectToAction("ApprovalQueue");
+        }
+
+        // ==================================================================
+        // 4. CREATE CLAIM (Lecturer Only)
+        // ==================================================================
         public IActionResult Create()
         {
             if (!IsAuthenticated() || !HasRole("Lecturer"))
@@ -86,10 +178,9 @@ namespace ClaimIT.Controllers
             claim.SubmittedDate = DateTime.Now;
             claim.Status = "Pending";
 
-            // File upload handling
+            // File Upload Handling
             var names = new List<string>();
             var paths = new List<string>();
-
             if (documents != null && documents.Length > 0)
             {
                 var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
@@ -112,9 +203,8 @@ namespace ClaimIT.Controllers
 
                     var uniqueName = Guid.NewGuid() + ext;
                     var filePath = Path.Combine(uploadsFolder, uniqueName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                        await file.CopyToAsync(stream);
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await file.CopyToAsync(stream);
 
                     names.Add(file.FileName);
                     paths.Add("/uploads/" + uniqueName);
@@ -124,7 +214,6 @@ namespace ClaimIT.Controllers
             claim.DocumentNamesJson = JsonSerializer.Serialize(names);
             claim.DocumentPathsJson = JsonSerializer.Serialize(paths);
 
-            // Save to database
             _context.Claims.Add(claim);
             _context.ClaimAudits.Add(new ClaimAudit
             {
@@ -136,19 +225,20 @@ namespace ClaimIT.Controllers
             });
 
             _context.SaveChanges();
-
             TempData["SuccessMessage"] = $"Claim #{claim.Id} submitted successfully!";
             return RedirectToAction("Index");
         }
 
-        // Verify / Approve / Reject
+        // ==================================================================
+        // 5. STATUS ACTIONS
+        // ==================================================================
         public IActionResult Verify(int id) => UpdateStatus(id, "Verified", "verified");
         public IActionResult Approve(int id) => UpdateStatus(id, "Approved", "approved");
         public IActionResult Reject(int id) => UpdateStatus(id, "Rejected", "rejected");
 
         private IActionResult UpdateStatus(int id, string status, string action)
         {
-            if (!IsAuthenticated() || (!HasRole("Coordinator") && !HasRole("Manager")))
+            if (!IsAuthenticated() || !IsCoordinatorOrManager)
                 return RedirectToAction("AccessDenied", "Auth");
 
             var claim = _context.Claims.FirstOrDefault(c => c.Id == id);
@@ -173,9 +263,12 @@ namespace ClaimIT.Controllers
 
             _context.SaveChanges();
             TempData["SuccessMessage"] = $"Claim #{id} {action} successfully!";
-            return RedirectToAction("Index");
+            return RedirectToAction("ApprovalQueue");
         }
 
+        // ==================================================================
+        // 6. DETAILS & DOCUMENTS
+        // ==================================================================
         public IActionResult Details(int id)
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "Auth");
@@ -187,10 +280,9 @@ namespace ClaimIT.Controllers
                 return RedirectToAction("AccessDenied", "Auth");
 
             ViewBag.UserRole = UserRole;
-            ViewBag.UserName = UserName;
-            ViewBag.CanVerify = (UserRole == "Coordinator" || UserRole == "Manager") && claim.Status == "Pending";
-            ViewBag.CanApprove = (UserRole == "Manager") && claim.Status == "Verified";
-            ViewBag.CanReject = (UserRole == "Coordinator" || UserRole == "Manager") && claim.Status != "Approved";
+            ViewBag.CanVerify = IsCoordinatorOrManager && claim.Status == "Pending";
+            ViewBag.CanApprove = IsCoordinatorOrManager && claim.Status == "Verified";
+            ViewBag.CanReject = IsCoordinatorOrManager && claim.Status != "Approved" && claim.Status != "Rejected";
 
             return View(claim);
         }
@@ -209,7 +301,6 @@ namespace ClaimIT.Controllers
                 ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 _ => "application/octet-stream"
             };
-
             return PhysicalFile(path, contentType);
         }
 
@@ -218,7 +309,6 @@ namespace ClaimIT.Controllers
             if (string.IsNullOrEmpty(fileName)) return NotFound();
             var path = Path.Combine(_environment.WebRootPath, "uploads", fileName);
             if (!System.IO.File.Exists(path)) return NotFound();
-
             return PhysicalFile(path, "application/octet-stream", originalName ?? fileName);
         }
     }
