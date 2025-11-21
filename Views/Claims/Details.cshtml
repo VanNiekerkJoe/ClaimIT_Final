@@ -1,245 +1,233 @@
 ﻿@model ClaimIT.Models.Claim
-
+@using System.IO
+@using System.Text.Json
 @{
     ViewData["Title"] = "Claim Details";
 }
 
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Claim Details - #@Model.Id</h4>
-            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Back to Dashboard</a>
-        </div>
-        <div class="card-body">
-            
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <!-- Header -->
+                <div class="card-header bg-gradient-primary text-white text-center py-4">
+                    <h2 class="mb-2">Claim Details #@Model.Id</h2>
+                    <div class="d-flex justify-content-center align-items-center gap-3">
+                        <h4 class="mb-0">Current Status:</h4>
+                        <span id="statusBadge" class="badge fs-4 px-4 py-2 @GetStatusClass(Model.Status)">
+                            @Model.Status
+                        </span>
+                    </div>
+                    <small class="d-block mt-2">
+                        Submitted on @Model.SubmittedDate.ToString("dddd, dd MMMM yyyy 'at' HH:mm")
+                    </small>
+                </div>
 
-            <div class="row mt-4">
-                <div class="col-12">
-                    <h5>Supporting Documents</h5>
-                    <div class="card">
-                        <div class="card-body">
-                            @if (Model.DocumentNames != null && Model.DocumentNames.Any())
-                            {
-                                <div class="document-gallery">
-                                    @for (int i = 0; i < Model.DocumentNames.Count; i++)
-                                    {
-                                        var documentName = Model.DocumentNames[i];
-                                        var documentPath = Model.DocumentPaths[i];
-                                        var extension = System.IO.Path.GetExtension(documentName).ToLower();
-                                        var isImage = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" }.Contains(extension);
-                                        var isPdf = extension == ".pdf";
+                <div class="card-body p-5">
+                    <div class="row g-5">
+                        <!-- Claim Info -->
+                        <div class="col-lg-6">
+                            <h4 class="text-primary mb-4">Claim Information</h4>
+                            <table class="table table-borderless table-hover fs-5">
+                                <tr><th width="40%">Lecturer</th><td>@Model.LecturerName</td></tr>
+                                <tr><th>Email</th><td><a href="mailto:@Model.LecturerEmail">@Model.LecturerEmail</a></td></tr>
+                                <tr><th>Hours Worked</th><td><strong>@Model.HoursWorked h</strong></td></tr>
+                                <tr><th>Hourly Rate</th><td><strong>R @Model.HourlyRate.ToString("F2")</strong></td></tr>
+                                <tr>
+                                    <th class="border-top pt-3">Total Amount</th>
+                                    <td class="border-top pt-3">
+                                        <h2 class="text-success mb-0">R @((Model.HoursWorked * Model.HourlyRate).ToString("F2"))</h2>
+                                    </td>
+                                </tr>
+                                @if (!string.IsNullOrEmpty(Model.Notes))
+                                {
+                                    <tr><th>Notes</th><td class="text-muted fst-italic">@Model.Notes</td></tr>
+                                }
+                            </table>
+                        </div>
 
-                                        <div class="document-item">
-                                            <div class="document-preview">
-                                                @if (isImage)
-                                                {
-                                                    <div class="image-preview">
-                                                        <img src="@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })"
-                                                             alt="@documentName"
-                                                             class="img-thumbnail document-image"
-                                                             data-bs-toggle="modal"
-                                                             data-bs-target="#imageModal"
-                                                             onclick="showImageInModal('@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })', '@documentName')">
-                                                    </div>
-                                                }
-                                                else if (isPdf)
-                                                {
-                                                    <div class="pdf-preview">
-                                                        <div class="pdf-icon"
-                                                             onclick="openPdf('@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })')">
-                                                            <i class="bi bi-file-earmark-pdf"></i>
-                                                        </div>
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <div class="file-preview">
-                                                        <div class="file-icon">
-                                                            <i class="bi bi-file-earmark"></i>
-                                                        </div>
-                                                    </div>
-                                                }
-                                            </div>
-                                            <div class="document-info">
-                                                <small class="document-name">@documentName</small>
-                                                <div class="document-actions">
-                                                    <a href="@Url.Action("ViewDocument", "Claims", new { fileName = documentPath })"
-                                                       class="btn btn-sm btn-outline-primary" target="_blank" title="View">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                    <a href="@Url.Action("DownloadDocument", "Claims", new { fileName = documentPath, originalName = documentName })"
-                                                       class="btn btn-sm btn-outline-success" title="Download">
-                                                        <i class="bi bi-download"></i>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <p class="text-muted">No supporting documents uploaded.</p>
-                            }
+                        <!-- HR Actions -->
+                        <div class="col-lg-6">
+                            <h4 class="text-primary mb-4">Update Status</h4>
+                            <div class="d-grid gap-3">
+                                <button class="btn btn-warning btn-lg status-btn @(Model.Status == "Pending" ? "active" : "")"
+                                        data-status="Pending">Pending</button>
+                                <button class="btn btn-info btn-lg text-white status-btn @(Model.Status == "Verified" ? "active" : "")"
+                                        data-status="Verified">Mark as Verified</button>
+                                <button class="btn btn-success btn-lg status-btn @(Model.Status == "Approved" ? "active" : "")"
+                                        data-status="Approved">Approve for Payment</button>
+                                <button class="btn btn-danger btn-lg status-btn"
+                                        data-status="Rejected">Reject Claim</button>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-5">Back to List</a>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Documents Section -->
+                    @{
+                        List<string> documentNames = new List<string>();
+                        List<string> documentPaths = new List<string>();
+
+                        if (!string.IsNullOrEmpty(Model.DocumentNamesJson))
+                        {
+                            documentNames = JsonSerializer.Deserialize<List<string>>(Model.DocumentNamesJson) ?? new List<string>();
+                        }
+                        if (!string.IsNullOrEmpty(Model.DocumentPathsJson))
+                        {
+                            documentPaths = JsonSerializer.Deserialize<List<string>>(Model.DocumentPathsJson) ?? new List<string>();
+                        }
+                    }
+
+                    @if (documentNames.Count > 0)
+                    {
+                        <hr class="my-5">
+                        <h4 class="text-primary mb-4">Supporting Documents (@documentNames.Count)</h4>
+                        <div class="row g-4">
+                            @for (int i = 0; i < documentNames.Count; i++)
+                            {
+                                var fileName = documentNames[i];
+                                var fullPath = documentPaths[i];
+
+                                // Extract filename safely without Path.GetFileName()
+                                var safeFileName = fullPath.Contains("/") 
+                                    ? fullPath.Split('/').Last() 
+                                    : fullPath.Split('\\').Last();
+
+                                var isPdf = fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 shadow-sm hover-shadow border-0">
+                                        <div class="card-body text-center p-4">
+                                            @if (isPdf)
+                                            {
+                                                <iframe src="@Url.Action("ViewDocument", "Claims", new { fileName = safeFileName })"
+                                                        class="w-100 rounded" style="height:220px;"></iframe>
+                                            }
+                                            else
+                                            {
+                                                <img src="@Url.Action("ViewDocument", "Claims", new { fileName = safeFileName })"
+                                                     class="img-fluid rounded shadow-sm" style="max-height:220px;" />
+                                            }
+                                            <p class="mt-3 mb-1 fw-bold text-truncate">@fileName</p>
+                                            <button type="button" class="btn btn-primary btn-sm mt-2 preview-doc"
+                                                    data-src="@Url.Action("ViewDocument", "Claims", new { fileName = safeFileName })"
+                                                    data-name="@fileName">
+                                                View Full Size
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border text-center py-5 mt-4">
+                            <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+                            <p class="mt-3 text-muted">No supporting documents attached.</p>
+                        </div>
+                    }
                 </div>
             </div>
-
-            <!-- ... rest of the view ... -->
         </div>
     </div>
 </div>
 
-<!-- Image Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalLabel">Document Preview</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Document Modal -->
+<div class="modal fade" id="docModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="docTitle">Document Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <img id="modalImage" src="" alt="" class="img-fluid">
+            <div class="modal-body bg-dark p-0 text-center">
+                <iframe id="modalPdf" width="100%" height="750" style="border:none;"></iframe>
+                <img id="modalImage" class="img-fluid d-none" style="max-height:88vh;" />
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <a href="#" id="downloadImage" class="btn btn-primary">Download</a>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0">
+        <div class="d-flex">
+            <div class="toast-body fw-bold">
+                Status updated!
             </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        function showImageInModal(imageUrl, fileName) {
-            document.getElementById('modalImage').src = imageUrl;
-            document.getElementById('modalImage').alt = fileName;
-            document.getElementById('downloadImage').href = '@Url.Action("DownloadDocument", "Claims")' +
-                '?fileName=' + encodeURIComponent(imageUrl.split('/').pop()) +
-                '&originalName=' + encodeURIComponent(fileName);
-        }
+<script>
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const newStatus = this.dataset.status;
+            if (this.classList.contains('active')) return;
+            if (!confirm(`Set status to ${newStatus}?`)) return;
 
-        function openPdf(pdfUrl) {
-            window.open(pdfUrl, '_blank');
-        }
-
-        // Add hover effects for documents
-        document.addEventListener('DOMContentLoaded', function() {
-            const documentItems = document.querySelectorAll('.document-item');
-            documentItems.forEach(item => {
-                item.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-2px)';
-                    this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
-                });
-
-                item.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = 'none';
-                });
+            const response = await fetch('/Claims/UpdateStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({ id: @Model.Id, newStatus })
             });
+
+            if (response.ok) {
+                document.getElementById('statusBadge').textContent = newStatus;
+                document.getElementById('statusBadge').className = 'badge fs-4 px-4 py-2 ' + 
+                    (newStatus === 'Approved' ? 'bg-success' :
+                     newStatus === 'Verified' ? 'bg-info' :
+                     newStatus === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark');
+
+                document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const toast = document.getElementById('successToast');
+                toast.querySelector('.toast-body').textContent = `Claim is now ${newStatus}!`;
+                new bootstrap.Toast(toast).show();
+            }
         });
-    </script>
-}
+    });
+
+    document.querySelectorAll('.preview-doc').forEach(btn => {
+        btn.onclick = function() {
+            const src = this.dataset.src;
+            const name = this.dataset.name;
+            document.getElementById('docTitle').textContent = name;
+            if (src.toLowerCase().includes('.pdf')) {
+                document.getElementById('modalPdf').src = src;
+                document.getElementById('modalPdf').classList.remove('d-none');
+                document.getElementById('modalImage').classList.add('d-none');
+            } else {
+                document.getElementById('modalImage').src = src;
+                document.getElementById('modalImage').classList.remove('d-none');
+                document.getElementById('modalPdf').classList.add('d-none');
+            }
+        };
+    });
+</script>
 
 <style>
-    .document-gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
-        margin-top: 15px;
-    }
-
-    .document-item {
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 15px;
-        text-align: center;
-        transition: all 0.3s ease;
-        background: white;
-    }
-
-    .document-preview {
-        margin-bottom: 10px;
-    }
-
-    .document-image {
-        max-width: 100%;
-        max-height: 120px;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-
-        .document-image:hover {
-            transform: scale(1.05);
-        }
-
-    .pdf-preview, .file-preview {
-        font-size: 3rem;
-        color: #6c757d;
-        cursor: pointer;
-        transition: color 0.3s ease;
-    }
-
-        .pdf-preview:hover {
-            color: #dc3545;
-        }
-
-        .file-preview:hover {
-            color: #0d6efd;
-        }
-
-    .document-info {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .document-name {
-        word-break: break-word;
-        font-weight: 500;
-    }
-
-    .document-actions {
-        display: flex;
-        justify-content: center;
-        gap: 5px;
-    }
-
-    .bi {
-        font-size: 1rem;
-    }
-
-    /* Modal enhancements */
-    .modal-content {
-        border-radius: 10px;
-        border: none;
-    }
-
-    .modal-header {
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 10px 10px 0 0;
-    }
-
-    .modal-body img {
-        max-height: 70vh;
-        object-fit: contain;
-    }
-
-    /* Responsive design */
-    @@media (max-width: 768px) {
-        .document-gallery {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-        }
-
-        .document-item {
-            padding: 10px;
-        }
-
-        .pdf-preview, .file-preview {
-            font-size: 2rem;
-        }
-    }
+    .hover-shadow:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15)!important; }
+    .bg-gradient-primary { background: linear-gradient(135deg, #667eea, #764ba2)!important; }
+    .status-btn.active { transform: scale(1.03); font-weight: 700; }
 </style>
+}
+
+@functions {
+    string GetStatusClass(string status) => status?.ToLower() switch
+    {
+        "approved" => "bg-success",
+        "verified" => "bg-info",
+        "rejected" => "bg-danger",
+        _ => "bg-warning text-dark"
+    };
+}

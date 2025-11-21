@@ -1,70 +1,53 @@
 ﻿@model ClaimIT.Models.Claim
-
 @{
     ViewData["Title"] = "Submit New Claim";
 }
 
-<div class="container mt-4">
+<div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Form Progress -->
-            <div class="form-progress mb-4">
-                <div class="progress-steps">
-                    <div class="step active" data-step="1">
-                        <div class="step-circle">1</div>
-                        <div class="step-label">Basic Info</div>
-                    </div>
-                    <div class="step" data-step="2">
-                        <div class="step-circle">2</div>
-                        <div class="step-label">Hours & Rate</div>
-                    </div>
-                    <div class="step" data-step="3">
-                        <div class="step-circle">3</div>
-                        <div class="step-label">Documents</div>
-                    </div>
-                    <div class="step" data-step="4">
-                        <div class="step-circle">4</div>
-                        <div class="step-label">Review</div>
-                    </div>
-                </div>
+        <div class="col-lg-11">
+            <!-- Progress Steps -->
+            <div class="progress-steps mb-5">
+                <div class="step active" data-step="1"><span class="step-circle">1</span><span class="step-label">Basic Info</span></div>
+                <div class="step" data-step="2"><span class="step-circle">2</span><span class="step-label">Hours & Rate</span></div>
+                <div class="step" data-step="3"><span class="step-circle">3</span><span class="step-label">Documents</span></div>
+                <div class="step" data-step="4"><span class="step-circle">4</span><span class="step-label">Review & Submit</span></div>
             </div>
 
-            <div class="card form-card">
-                <div class="card-header">
-                    <h4 class="mb-0">Submit Monthly Claim</h4>
-                    <p class="text-muted mb-0">Logged in as: @Context.Session.GetString("UserName")</p>
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-gradient-primary text-white text-center py-4">
+                    <h3 class="mb-0">Submit Monthly Claim</h3>
+                    <p class="mb-0 mt-2">Logged in as: <strong>@Context.Session.GetString("UserName")</strong></p>
                 </div>
-                <div class="card-body">
-                    <form asp-action="Create" enctype="multipart/form-data" id="claimForm">
-                        <!-- Hidden field for LecturerEmail -->
-                        <input type="hidden" asp-for="LecturerEmail" id="lecturerEmail" />
 
-                        <!-- Step 1: Basic Information -->
+                <div class="card-body p-5">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data" id="claimForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Hidden fields - auto-filled -->
+                        <input type="hidden" asp-for="LecturerName" value="@Context.Session.GetString("UserName")" />
+                        <input type="hidden" asp-for="LecturerEmail" value="@Context.Session.GetString("UserEmail")" />
+
+                        <!-- Step 1: Basic Info -->
                         <div class="form-step active" data-step="1">
-                            <h5 class="step-title">Basic Information</h5>
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i> Your personal information is automatically filled from your profile.
-                            </div>
-                            <div class="row">
+                            <h4 class="mb-4 text-primary">1. Basic Information</h4>
+                            <div class="row g-4">
                                 <div class="col-md-6">
-                                    <div class="form-floating mb-3">
-                                        <input asp-for="LecturerName" class="form-control" placeholder="Enter lecturer name" readonly />
-                                        <label asp-for="LecturerName">Lecturer Name</label>
-                                        <span asp-validation-for="LecturerName" class="text-danger validation-message"></span>
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" value="@Context.Session.GetString("UserName")" readonly />
+                                        <label>Lecturer Name</label>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="form-floating mb-3">
-                                        <input asp-for="LecturerEmail" class="form-control" placeholder="Enter email" readonly />
-                                        <label asp-for="LecturerEmail">Email Address</label>
-                                        <span asp-validation-for="LecturerEmail" class="text-danger validation-message"></span>
+                                    <div class="form-floating">
+                                        <input type="email" class="form-control" value="@Context.Session.GetString("UserEmail")" readonly />
+                                        <label>Email Address</label>
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <div class="form-floating mb-3">
-                                        <textarea asp-for="Notes" class="form-control" placeholder="Enter additional notes" style="height: 100px"></textarea>
-                                        <label asp-for="Notes">Additional Notes</label>
-                                        <span asp-validation-for="Notes" class="text-danger validation-message"></span>
+                                    <div class="form-floating">
+                                        <textarea asp-for="Notes" class="form-control" style="height: 130px" placeholder="Any special notes..."></textarea>
+                                        <label asp-for="Notes">Additional Notes (Optional)</label>
                                     </div>
                                 </div>
                             </div>
@@ -72,97 +55,78 @@
 
                         <!-- Step 2: Hours & Rate -->
                         <div class="form-step" data-step="2">
-                            <h5 class="step-title">Hours & Rate</h5>
-                            <div class="row">
+                            <h4 class="mb-4 text-primary">2. Hours Worked & Hourly Rate</h4>
+                            <div class="row g-4">
                                 <div class="col-md-6">
-                                    <div class="form-floating mb-3">
-                                        <input asp-for="HoursWorked" class="form-control" type="number" step="0.5" min="1" max="200" placeholder="Enter hours worked" />
-                                        <label asp-for="HoursWorked">Hours Worked *</label>
-                                        <span asp-validation-for="HoursWorked" class="text-danger validation-message"></span>
+                                    <div class="form-floating">
+                                        <input asp-for="HoursWorked" id="HoursWorked" class="form-control" type="number" step="0.5" min="0.5" max="300" required />
+                                        <label asp-for="HoursWorked">Hours Worked <span class="text-danger">*</span></label>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="form-floating mb-3">
-                                        <input asp-for="HourlyRate" class="form-control" type="number" step="0.01" min="20" max="500" placeholder="Enter hourly rate"
-                                               value="@ViewBag.DefaultHourlyRate" />
-                                        <label asp-for="HourlyRate">Hourly Rate (R) *</label>
-                                        <span asp-validation-for="HourlyRate" class="text-danger validation-message"></span>
-                                        <small class="text-muted">Your default rate: R @ViewBag.DefaultHourlyRate</small>
+                                    <div class="form-floating">
+                                        <input asp-for="HourlyRate" id="HourlyRate" class="form-control" type="number" step="0.01" min="20" max="2000"
+                                               value="@ViewBag.DefaultHourlyRate" required />
+                                        <label asp-for="HourlyRate">Hourly Rate (R) <span class="text-danger">*</span></label>
+                                        <small class="text-success fw-bold">Default: R @ViewBag.DefaultHourlyRate</small>
                                     </div>
                                 </div>
                             </div>
-                            <div class="calculation-preview">
-                                <div class="preview-card">
-                                    <h6>Amount Preview</h6>
-                                    <div class="preview-row">
-                                        <span>Hours:</span>
-                                        <span id="previewHours">0</span>
-                                    </div>
-                                    <div class="preview-row">
-                                        <span>Rate:</span>
-                                        <span id="previewRate">R 0.00</span>
-                                    </div>
-                                    <div class="preview-row total">
-                                        <strong>Total:</strong>
-                                        <strong id="previewTotal">R 0.00</strong>
-                                    </div>
+
+                            <div class="mt-5 p-4 bg-light rounded-4 border border-primary">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0 text-primary">Total Claim Amount</h4>
+                                    <h2 class="mb-0 text-success" id="liveTotal">R 0.00</h2>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Step 3: Documents -->
                         <div class="form-step" data-step="3">
-                            <h5 class="step-title">Supporting Documents</h5>
-                            <div class="file-upload-area">
-                                <input type="file" name="documents" class="file-input" id="fileInput" multiple
-                                       accept=".pdf,.docx,.xlsx,.jpg,.png,.jpeg" />
-                                <div class="upload-placeholder" id="uploadPlaceholder">
-                                    <i class="bi bi-cloud-upload"></i>
-                                    <h6>Drop files here or click to upload</h6>
-                                    <p class="text-muted">Supports PDF, Word, Excel, Images (Max 5MB each)</p>
-                                </div>
-                                <div class="file-list" id="fileList"></div>
+                            <h4 class="mb-4 text-primary">3. Supporting Documents</h4>
+                            <p class="text-muted mb-4">Upload timesheets, contracts, proof of work (PDF, images, Word, Excel)</p>
+
+                            <div class="file-upload-zone border-3 border-dashed rounded-4 p-5 text-center mb-4 bg-light" id="dropZone">
+                                <input type="file" name="documents" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" class="d-none" />
+                                <i class="bi bi-cloud-arrow-up-fill display-3 text-primary mb-3"></i>
+                                <h5>Drop files here or click to upload</h5>
+                                <p class="text-muted">Max 10MB per file • Multiple files allowed</p>
                             </div>
+
+                            <div id="filePreview" class="row g-4"></div>
                         </div>
 
                         <!-- Step 4: Review -->
                         <div class="form-step" data-step="4">
-                            <h5 class="step-title">Review & Submit</h5>
-                            <div class="review-summary">
-                                <div class="review-item">
-                                    <strong>Lecturer Name:</strong>
-                                    <span id="reviewLecturerName">—</span>
-                                </div>
-                                <div class="review-item">
-                                    <strong>Email:</strong>
-                                    <span id="reviewLecturerEmail">—</span>
-                                </div>
-                                <div class="review-item">
-                                    <strong>Hours Worked:</strong>
-                                    <span id="reviewHoursWorked">—</span>
-                                </div>
-                                <div class="review-item">
-                                    <strong>Hourly Rate:</strong>
-                                    <span id="reviewHourlyRate">—</span>
-                                </div>
-                                <div class="review-item">
-                                    <strong>Total Amount:</strong>
-                                    <span id="reviewTotalAmount" class="text-success">—</span>
-                                </div>
-                                <div class="review-item">
-                                    <strong>Documents:</strong>
-                                    <span id="reviewDocuments">0 files</span>
+                            <h4 class="mb-4 text-primary">4. Review & Submit</h4>
+                            <div class="bg-light p-5 rounded-4 border">
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        <h5>Claim Summary</h5>
+                                        <hr>
+                                        <p><strong>Name:</strong> @Context.Session.GetString("UserName")</p>
+                                        <p><strong>Email:</strong> @Context.Session.GetString("UserEmail")</p>
+                                        <p><strong>Hours Worked:</strong> <span id="reviewHours">—</span></p>
+                                        <p><strong>Hourly Rate:</strong> <span id="reviewRate">—</span></p>
+                                        <p><strong>Notes:</strong> <span id="reviewNotes">None</span></p>
+                                    </div>
+                                    <div class="col-md-5 text-end">
+                                        <h2 class="text-success mb-4">Total: <span id="reviewTotal">R 0.00</span></h2>
+                                        <h5 class="text-muted"><span id="fileCount">0 files</span> attached</h5>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Form Navigation -->
-                        <div class="form-navigation mt-4">
-                            <button type="button" class="btn btn-outline-secondary" id="prevBtn" disabled>Previous</button>
-                            <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
-                            <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
-                                Submit Claim
-                            </button>
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-5">
+                            <button type="button" id="prevBtn" class="btn btn-lg btn-outline-secondary px-5" disabled>Previous</button>
+                            <div>
+                                <button type="button" id="nextBtn" class="btn btn-lg btn-primary px-5">Next</button>
+                                <button type="submit" id="submitBtn" class="btn btn-lg btn-success px-5 d-none">
+                                    Submit Claim
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -171,239 +135,235 @@
     </div>
 </div>
 
+<!-- Large Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Document Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark p-0 text-center">
+                <iframe id="pdfViewer" width="100%" height="700" style="border:none;"></iframe>
+                <img id="imageViewer" class="img-fluid d-none" style="max-height: 80vh;" />
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-fill lecturer information
-            const lecturerName = '@Context.Session.GetString("UserName")';
-            const lecturerEmail = '@Context.Session.GetString("UserEmail")';
+        const filesArray = [];
+        let currentStep = 1;
+        const totalSteps = 4;
 
-            if (lecturerName && document.querySelector('#LecturerName')) {
-                document.querySelector('#LecturerName').value = lecturerName;
-            }
+        // AUTO CALCULATION — WORKS 100%
+        function calculateTotal() {
+            const hours = parseFloat(document.getElementById('HoursWorked').value) || 0;
+            const rate = parseFloat(document.getElementById('HourlyRate').value) || 0;
+            const total = hours * rate;
 
-            if (lecturerEmail && document.querySelector('#LecturerEmail')) {
-                document.querySelector('#LecturerEmail').value = lecturerEmail;
-                document.querySelector('#lecturerEmail').value = lecturerEmail;
-            }
+            const formatted = total.toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR' });
+            document.getElementById('liveTotal').textContent = formatted;
+            document.getElementById('reviewTotal').textContent = formatted;
+            document.getElementById('reviewHours').textContent = hours.toFixed(1);
+            document.getElementById('reviewRate').textContent = 'R ' + rate.toFixed(2);
+        }
 
-            initializeMultiStepForm();
-            initializeRealTimeCalculations();
-            initializeFileUpload();
+        document.addEventListener('DOMContentLoaded', function () {
+            const hoursInput = document.getElementById('HoursWorked');
+            const rateInput = document.getElementById('HourlyRate');
+
+            hoursInput.addEventListener('input', calculateTotal);
+            rateInput.addEventListener('input', calculateTotal);
+            hoursInput.addEventListener('change', calculateTotal);
+            rateInput.addEventListener('change', calculateTotal);
+
+            calculateTotal(); // Initial
         });
 
-        function initializeMultiStepForm() {
-            const steps = document.querySelectorAll('.form-step');
-            const progressSteps = document.querySelectorAll('.progress-steps .step');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const submitBtn = document.getElementById('submitBtn');
-            let currentStep = 1;
+        // File Upload
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('filePreview');
 
-            function showStep(step) {
-                steps.forEach(s => s.classList.remove('active'));
-                progressSteps.forEach(s => s.classList.remove('active'));
+        dropZone.addEventListener('click', () => fileInput.click());
+        ['dragover', 'dragenter'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.add('border-primary', 'bg-primary-subtle')));
+        ['dragleave', 'dragend', 'drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('border-primary', 'bg-primary-subtle')));
 
-                document.querySelector(`.form-step[data-step="${step}"]`).classList.add('active');
-                document.querySelector(`.progress-steps .step[data-step="${step}"]`).classList.add('active');
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
-                // Update navigation buttons
-                prevBtn.disabled = step === 1;
-                nextBtn.style.display = step === 4 ? 'none' : 'block';
-                submitBtn.style.display = step === 4 ? 'block' : 'none';
-
-                currentStep = step;
-            }
-
-            function validateStep(step) {
-                let isValid = true;
-
-                if (step === 1) {
-                    const lecturerName = document.querySelector('#LecturerName').value;
-                    const lecturerEmail = document.querySelector('#LecturerEmail').value;
-
-                    if (!lecturerName.trim()) {
-                        isValid = false;
-                        showValidationError('LecturerName', 'Lecturer name is required');
-                    }
-
-                    if (!lecturerEmail.trim()) {
-                        isValid = false;
-                        showValidationError('LecturerEmail', 'Lecturer email is required');
-                    }
-                } else if (step === 2) {
-                    const hours = document.querySelector('#HoursWorked').value;
-                    const rate = document.querySelector('#HourlyRate').value;
-
-                    if (!hours || hours < 1 || hours > 200) {
-                        isValid = false;
-                        showValidationError('HoursWorked', 'Hours must be between 1 and 200');
-                    }
-
-                    if (!rate || rate < 20 || rate > 500) {
-                        isValid = false;
-                        showValidationError('HourlyRate', 'Hourly rate must be between R20 and R500');
-                    }
+        function handleFiles(files) {
+            [...files].forEach(file => {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File too large: ' + file.name);
+                    return;
                 }
+                if (filesArray.find(f => f.name === file.name && f.size === file.size)) return;
 
-                return isValid;
-            }
-
-            function showValidationError(fieldName, message) {
-                // You can implement validation error display here
-                console.log(`Validation error for ${fieldName}: ${message}`);
-            }
-
-            nextBtn.addEventListener('click', function() {
-                if (validateStep(currentStep)) {
-                    showStep(currentStep + 1);
-                    updateReviewSummary();
-                }
+                filesArray.push(file);
+                const reader = new FileReader();
+                reader.onload = e => addPreview(file, e.target.result);
+                reader.readAsDataURL(file);
             });
-
-            prevBtn.addEventListener('click', function() {
-                showStep(currentStep - 1);
-            });
-
-            // Initialize first step
-            showStep(1);
         }
 
-        function initializeRealTimeCalculations() {
-            const hoursInput = document.querySelector('#HoursWorked');
-            const rateInput = document.querySelector('#HourlyRate');
+        function addPreview(file, dataUrl) {
+            const col = document.createElement('div');
+            col.className = 'col-md-4 col-lg-3';
+            const isPdf = file.type === 'application/pdf';
 
-            function updateCalculations() {
-                const hours = parseFloat(hoursInput.value) || 0;
-                const rate = parseFloat(rateInput.value) || 0;
-                const total = hours * rate;
-
-                document.getElementById('previewHours').textContent = hours;
-                document.getElementById('previewRate').textContent = `R ${rate.toFixed(2)}`;
-                document.getElementById('previewTotal').textContent = `R ${total.toFixed(2)}`;
-            }
-
-            hoursInput.addEventListener('input', updateCalculations);
-            rateInput.addEventListener('input', updateCalculations);
-
-            // Initial calculation
-            updateCalculations();
-        }
-
-        function initializeFileUpload() {
-            const fileInput = document.getElementById('fileInput');
-            const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-            const fileList = document.getElementById('fileList');
-
-            uploadPlaceholder.addEventListener('click', () => fileInput.click());
-
-            uploadPlaceholder.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadPlaceholder.classList.add('dragover');
-            });
-
-            uploadPlaceholder.addEventListener('dragleave', () => {
-                uploadPlaceholder.classList.remove('dragover');
-            });
-
-            uploadPlaceholder.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadPlaceholder.classList.remove('dragover');
-                fileInput.files = e.dataTransfer.files;
-                updateFileList();
-            });
-
-            fileInput.addEventListener('change', updateFileList);
-
-            function updateFileList() {
-                fileList.innerHTML = '';
-                const files = Array.from(fileInput.files);
-
-                files.forEach((file, index) => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item';
-
-                    // Create preview for images
-                    let previewHtml = '';
-                    if (file.type.startsWith('image/')) {
-                        previewHtml = `
-                            <div class="file-preview-image">
-                                <img src="${URL.createObjectURL(file)}" alt="${file.name}" class="img-thumbnail">
-                            </div>
-                        `;
-                    } else if (file.type === 'application/pdf') {
-                        previewHtml = `
-                            <div class="file-preview-pdf">
-                                <i class="bi bi-file-earmark-pdf"></i>
-                            </div>
-                        `;
-                    } else {
-                        previewHtml = `
-                            <div class="file-preview-generic">
-                                <i class="bi bi-file-earmark"></i>
-                            </div>
-                        `;
-                    }
-
-                    fileItem.innerHTML = `
-                        ${previewHtml}
-                        <div class="file-info">
-                            <span class="file-name">${file.name}</span>
-                            <span class="file-size">(${formatFileSize(file.size)})</span>
+            col.innerHTML = `
+                <div class="card shadow h-100">
+                    <div class="card-body text-center p-3">
+                        ${isPdf ? `<iframe src="${dataUrl}#toolbar=0" class="w-100 rounded" style="height:200px;"></iframe>`
+                               : `<img src="${dataUrl}" class="img-fluid rounded" style="max-height:200px;">`}
+                        <p class="small mt-2 mb-1 text-truncate fw-bold">${file.name}</p>
+                        <div class="btn-group w-100 mt-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm preview-file">View</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-file">Remove</button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger remove-file" data-index="${index}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `;
-                    fileList.appendChild(fileItem);
-                });
+                    </div>
+                </div>
+            `;
 
-                // Add remove file functionality
-                document.querySelectorAll('.remove-file').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const index = parseInt(this.dataset.index);
-                        removeFile(index);
-                    });
-                });
-            }
+            previewContainer.appendChild(col);
 
-            function removeFile(index) {
-                const dt = new DataTransfer();
-                const files = Array.from(fileInput.files);
+            col.querySelector('.remove-file').onclick = () => {
+                filesArray.splice(filesArray.indexOf(file), 1);
+                col.remove();
+                updateFileCount();
+            };
 
-                files.forEach((file, i) => {
-                    if (i !== index) dt.items.add(file);
-                });
-
-                fileInput.files = dt.files;
-                updateFileList();
-            }
-
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
+            col.querySelector('.preview-file').onclick = () => {
+                const modal = new bootstrap.Modal('#previewModal');
+                if (isPdf) {
+                    document.getElementById('pdfViewer').src = dataUrl + '#toolbar=0&zoom=100';
+                    document.getElementById('pdfViewer').classList.remove('d-none');
+                    document.getElementById('imageViewer').classList.add('d-none');
+                } else {
+                    document.getElementById('imageViewer').src = dataUrl;
+                    document.getElementById('imageViewer').classList.remove('d-none');
+                    document.getElementById('pdfViewer').classList.add('d-none');
+                }
+                modal.show();
+            };
         }
 
-        function updateReviewSummary() {
-            // Update review summary with form data
-            document.getElementById('reviewLecturerName').textContent = document.querySelector('#LecturerName').value || '—';
-            document.getElementById('reviewLecturerEmail').textContent = document.querySelector('#LecturerEmail').value || '—';
-            document.getElementById('reviewHoursWorked').textContent = document.querySelector('#HoursWorked').value || '—';
-            document.getElementById('reviewHourlyRate').textContent = 'R ' + (document.querySelector('#HourlyRate').value || '0.00');
-            document.getElementById('reviewTotalAmount').textContent = document.getElementById('previewTotal').textContent;
-            document.getElementById('reviewDocuments').textContent = document.getElementById('fileInput').files.length + ' files';
+        function updateFileCount() {
+            const count = filesArray.length;
+            document.getElementById('fileCount').textContent = count + ' file' + (count !== 1 ? 's' : '');
         }
+
+        // Navigation
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentStep === 2 && (!document.getElementById('HoursWorked').value || !document.getElementById('HourlyRate').value)) {
+                alert('Please enter hours and rate');
+                return;
+            }
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateSteps();
+            }
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateSteps();
+            }
+        });
+
+        function updateSteps() {
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+
+            document.querySelectorAll('.progress-steps .step').forEach(s => {
+                s.classList.toggle('active', parseInt(s.dataset.step) <= currentStep);
+            });
+
+            document.getElementById('prevBtn').disabled = currentStep === 1;
+            document.getElementById('nextBtn').style.display = currentStep === totalSteps ? 'none' : 'block';
+            document.getElementById('submitBtn').classList.toggle('d-none', currentStep !== totalSteps);
+        }
+
+        // Submit
+        document.getElementById('claimForm').addEventListener('submit', function(e) {
+            if (filesArray.length === 0 && !confirm('No documents attached. Submit anyway?')) {
+                e.preventDefault();
+                return;
+            }
+            const dt = new DataTransfer();
+            filesArray.forEach(f => dt.items.add(f));
+            fileInput.files = dt.files;
+        });
+
+        updateFileCount();
     </script>
 
     <style>
-        /* Your existing CSS styles remain the same */
-        .form-control[readonly] {
-            background-color: #f8f9fa;
-            opacity: 1;
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        }
+
+        .file-upload-zone {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+            .progress-steps::before {
+                content: '';
+                position: absolute;
+                top: 22px;
+                left: 50px;
+                right: 50px;
+                height: 4px;
+                background: #e0e0e0;
+                z-index: 0;
+            }
+
+        .step {
+            z-index: 1;
+            text-align: center;
+        }
+
+        .step-circle {
+            width: 48px;
+            height: 48px;
+            background: #e0e0e0;
+            color: #999;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .step.active .step-circle {
+            background: #667eea;
+            color: white;
+            transform: scale(1.15);
+        }
+
+        .step-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .step.active .step-label {
+            color: #667eea;
         }
     </style>
 }
