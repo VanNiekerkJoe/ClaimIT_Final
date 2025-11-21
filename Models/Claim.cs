@@ -10,6 +10,10 @@ namespace ClaimIT.Models
         [Required(ErrorMessage = "Lecturer name is required")]
         public string LecturerName { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Lecturer email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string LecturerEmail { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Hours worked is required")]
         [Range(1, 200, ErrorMessage = "Hours must be between 1 and 200")]
         public decimal HoursWorked { get; set; }
@@ -22,7 +26,7 @@ namespace ClaimIT.Models
         public string Notes { get; set; } = string.Empty;
         public string Status { get; set; } = "Pending";
         public List<string> DocumentNames { get; set; } = new List<string>();
-        public List<string> DocumentPaths { get; set; } = new List<string>(); // New property for file paths
+        public List<string> DocumentPaths { get; set; } = new List<string>();
         public DateTime SubmittedDate { get; set; } = DateTime.Now;
         public DateTime? ApprovedDate { get; set; }
         public string ApprovedBy { get; set; } = string.Empty;
@@ -32,7 +36,7 @@ namespace ClaimIT.Models
     {
         public int Id { get; set; }
         public string FileName { get; set; } = string.Empty;
-        public string StoredFileName { get; set; } = string.Empty; // Unique stored filename
+        public string StoredFileName { get; set; } = string.Empty;
         public string ContentType { get; set; } = string.Empty;
         public long FileSize { get; set; }
         public int ClaimId { get; set; }

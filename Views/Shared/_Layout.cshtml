@@ -109,6 +109,49 @@
             border: 1px solid rgba(255,255,255,0.2);
         }
 
+        /* User Info Styles */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
         /* Enhanced Stat Cards */
         .stat-card {
             background: white;
@@ -284,6 +327,18 @@
                 box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
             }
 
+        .btn-outline-light {
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            background: transparent;
+        }
+
+            .btn-outline-light:hover {
+                background: rgba(255,255,255,0.1);
+                color: white;
+                transform: translateY(-2px);
+            }
+
         /* Enhanced Tables */
         .table {
             background: white;
@@ -340,6 +395,26 @@
 
         .badge-rejected {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .badge-lecturer {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .badge-coordinator {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .badge-manager {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+
+        .badge-hr {
+            background: linear-gradient(135deg, #27ae60, #229954);
             color: white;
         }
 
@@ -593,6 +668,36 @@
                 transform: scale(1.2);
             }
 
+        /* Role-based Navigation Styles */
+        .nav-divider {
+            height: 20px;
+            width: 1px;
+            background: rgba(255,255,255,0.3);
+            margin: 0 10px;
+        }
+
+        .role-section {
+            border-left: 3px solid;
+            padding-left: 10px;
+            margin-left: 5px;
+        }
+
+        .role-lecturer {
+            border-color: #3498db;
+        }
+
+        .role-coordinator {
+            border-color: #f39c12;
+        }
+
+        .role-manager {
+            border-color: #9b59b6;
+        }
+
+        .role-hr {
+            border-color: #27ae60;
+        }
+
         /* Responsive Design */
         @@media (max-width: 768px) {
             .navbar-brand {
@@ -632,6 +737,16 @@
             .tutorial-container {
                 padding: 20px;
                 margin: 20px;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .user-details {
+                align-items: center;
             }
         }
 
@@ -830,37 +945,124 @@
                 <i class="bi bi-clipboard-data me-2"></i>
                 <strong>ClaimIT Dashboard</strong>
             </a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                     aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Claims" asp-action="Index">
-                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                @if (Context.Session.GetString("UserEmail") != null)
+                {
+                    <ul class="navbar-nav flex-grow-1">
+                        <!-- Common Navigation for All Roles -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Claims" asp-action="Index">
+                                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                            </a>
+                        </li>
+
+                        <!-- Lecturer Specific Navigation -->
+                        @if (Context.Session.GetString("UserRole") == "Lecturer")
+                        {
+                            <span class="nav-divider d-none d-md-block"></span>
+                            <li class="nav-item role-section role-lecturer">
+                                <a class="nav-link" asp-controller="Claims" asp-action="Create">
+                                    <i class="bi bi-plus-circle me-1"></i>New Claim
+                                </a>
+                            </li>
+                            <li class="nav-item role-section role-lecturer">
+                                <a class="nav-link" asp-controller="Claims" asp-action="Index">
+                                    <i class="bi bi-list-check me-1"></i>My Claims
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Coordinator & Manager Specific Navigation -->
+                        @if (Context.Session.GetString("UserRole") == "Coordinator" || Context.Session.GetString("UserRole") == "Manager")
+                        {
+                            <span class="nav-divider d-none d-md-block"></span>
+                            <li class="nav-item role-section @(Context.Session.GetString("UserRole") == "Coordinator" ? "role-coordinator" : "role-manager")">
+                                <a class="nav-link" asp-controller="Claims" asp-action="ApprovalQueue">
+                                    <i class="bi bi-clock-history me-1"></i>Approval Queue
+                                    @{
+                                        var pendingCount = 0; // This would come from your data context
+                                        if (pendingCount > 0)
+                                        {
+                                            <span class="badge bg-danger ms-1">@pendingCount</span>
+                                        }
+                                    }
+                                </a>
+                            </li>
+                            <li class="nav-item role-section @(Context.Session.GetString("UserRole") == "Coordinator" ? "role-coordinator" : "role-manager")">
+                                <a class="nav-link" asp-controller="Claims" asp-action="Index">
+                                    <i class="bi bi-eye me-1"></i>All Claims
+                                </a>
+                            </li>
+                        }
+
+                        <!-- HR Specific Navigation -->
+                        @if (Context.Session.GetString("UserRole") == "HR")
+                        {
+                            <span class="nav-divider d-none d-md-block"></span>
+                            <li class="nav-item role-section role-hr">
+                                <a class="nav-link" asp-controller="HR" asp-action="Index">
+                                    <i class="bi bi-people me-1"></i>User Management
+                                </a>
+                            </li>
+                            <li class="nav-item role-section role-hr">
+                                <a class="nav-link" asp-controller="HR" asp-action="Reports">
+                                    <i class="bi bi-graph-up me-1"></i>Reports & Analytics
+                                </a>
+                            </li>
+                            <li class="nav-item role-section role-hr">
+                                <a class="nav-link" asp-controller="HR" asp-action="Index">
+                                    <i class="bi bi-file-earmark-text me-1"></i>Invoices
+                                </a>
+                            </li>
+                        }
+                    </ul>
+
+                    <!-- User Info and Controls -->
+                    <div class="navbar-nav align-items-center">
+                        <!-- Live Clock -->
+                        <span class="navbar-text live-clock me-3" id="liveClock">
+                            <i class="bi bi-clock me-1"></i>
+                            Loading...
+                        </span>
+
+                        <!-- User Information -->
+                        <div class="user-info me-3">
+                            <div class="user-avatar">
+                                @GetUserInitials(Context.Session.GetString("UserName"))
+                            </div>
+                            <div class="user-details">
+                                <span class="user-name">@Context.Session.GetString("UserName")</span>
+                                <span class="user-role">
+                                    <span class="role-badge @GetRoleBadgeClass(Context.Session.GetString("UserRole"))">
+                                        @Context.Session.GetString("UserRole")
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Logout Button -->
+                        <a href="@Url.Action("Logout", "Auth")" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Claims" asp-action="Index">
-                            <i class="bi bi-list-check me-1"></i>Claims
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Claims" asp-action="ApprovalQueue">
-                            <i class="bi bi-clock-history me-1"></i>Approval Queue
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Claims" asp-action="Create">
-                            <i class="bi bi-plus-circle me-1"></i>New Claim
-                        </a>
-                    </li>
-                </ul>
-                <span class="navbar-text live-clock" id="liveClock">
-                    <i class="bi bi-clock me-1"></i>
-                    Loading...
-                </span>
+                    </div>
+                }
+                else
+                {
+                    <!-- Show only login link when not authenticated -->
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Auth" asp-action="Login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </a>
+                        </li>
+                    </ul>
+                }
             </div>
         </div>
     </nav>
@@ -875,15 +1077,21 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <span>Claim Status Tracker</span>
-                    <div class="progress mt-2" style="width: 200px; display: inline-block; margin-left: 10px;">
-                        <div class="progress-bar" role="progressbar" style="width: 75%;"
-                             aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="d-flex align-items-center">
+                        <span>Claim Status Tracker</span>
+                        <div class="progress mt-2 ms-2" style="width: 200px;">
+                            <div class="progress-bar" role="progressbar" style="width: 75%;"
+                                 aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-6 text-end">
                     <span id="footerStatus">
                         <i class="bi bi-activity me-1"></i>
+                        @if (Context.Session.GetString("UserEmail") != null)
+                        {
+                            <span>Logged in as <strong>@Context.Session.GetString("UserName")</strong> - </span>
+                        }
                         Processing: 75% of claims completed
                     </span>
                 </div>
@@ -955,11 +1163,13 @@
                         setTimeout(() => {
                             loadingScreen.remove();
                             // Initialize animations
-                            AOS.init({
-                                duration: 800,
-                                once: true,
-                                offset: 100
-                            });
+                            if (typeof AOS !== 'undefined') {
+                                AOS.init({
+                                    duration: 800,
+                                    once: true,
+                                    offset: 100
+                                });
+                            }
 
                             // Show tutorial if first visit
                             if (!localStorage.getItem('claimit_tutorial_completed')) {
@@ -989,13 +1199,23 @@
                 month: 'short',
                 day: 'numeric'
             });
-            document.getElementById('liveClock').innerHTML =
-                `<i class="bi bi-clock me-1"></i>${timeString} • ${dateString}`;
+
+            const liveClock = document.getElementById('liveClock');
+            if (liveClock) {
+                liveClock.innerHTML = `<i class="bi bi-clock me-1"></i>${timeString} • ${dateString}`;
+            }
 
             // Update footer status with random progress for demo
             const progress = 60 + Math.floor(Math.random() * 25);
-            document.getElementById('footerStatus').innerHTML =
-                `<i class="bi bi-activity me-1"></i>Processing: ${progress}% of claims completed as of ${timeString}`;
+            const footerStatus = document.getElementById('footerStatus');
+            if (footerStatus) {
+                let userInfo = '';
+                @if (Context.Session.GetString("UserEmail") != null)
+                {
+                        @:userInfo = `Logged in as <strong>@Context.Session.GetString("UserName")</strong> - `;
+                }
+                footerStatus.innerHTML = `<i class="bi bi-activity me-1"></i>${userInfo}Processing: ${progress}% of claims completed as of ${timeString}`;
+            }
 
             // Update progress bar
             const progressBar = document.querySelector('.footer .progress-bar');
@@ -1008,61 +1228,63 @@
         setInterval(updateClock, 1000);
 
         // Initialize particles.js
-        particlesJS('particles-js', {
-            particles: {
-                number: {
-                    value: 80,
-                    density: {
+        if (typeof particlesJS !== 'undefined') {
+            particlesJS('particles-js', {
+                particles: {
+                    number: {
+                        value: 80,
+                        density: {
+                            enable: true,
+                            value_area: 800
+                        }
+                    },
+                    color: {
+                        value: "#3498db"
+                    },
+                    shape: {
+                        type: "circle"
+                    },
+                    opacity: {
+                        value: 0.5,
+                        random: true
+                    },
+                    size: {
+                        value: 3,
+                        random: true
+                    },
+                    line_linked: {
                         enable: true,
-                        value_area: 800
+                        distance: 150,
+                        color: "#3498db",
+                        opacity: 0.2,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 2,
+                        direction: "none",
+                        random: true,
+                        straight: false,
+                        out_mode: "out",
+                        bounce: false
                     }
                 },
-                color: {
-                    value: "#3498db"
-                },
-                shape: {
-                    type: "circle"
-                },
-                opacity: {
-                    value: 0.5,
-                    random: true
-                },
-                size: {
-                    value: 3,
-                    random: true
-                },
-                line_linked: {
-                    enable: true,
-                    distance: 150,
-                    color: "#3498db",
-                    opacity: 0.2,
-                    width: 1
-                },
-                move: {
-                    enable: true,
-                    speed: 2,
-                    direction: "none",
-                    random: true,
-                    straight: false,
-                    out_mode: "out",
-                    bounce: false
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: {
+                            enable: true,
+                            mode: "repulse"
+                        },
+                        onclick: {
+                            enable: true,
+                            mode: "push"
+                        },
+                        resize: true
+                    }
                 }
-            },
-            interactivity: {
-                detect_on: "canvas",
-                events: {
-                    onhover: {
-                        enable: true,
-                        mode: "repulse"
-                    },
-                    onclick: {
-                        enable: true,
-                        mode: "push"
-                    },
-                    resize: true
-                }
-            }
-        });
+            });
+        }
 
         // Add ripple effect to buttons
         document.addEventListener('DOMContentLoaded', function() {
@@ -1127,8 +1349,10 @@
 
         function showTutorial() {
             const tutorialOverlay = document.getElementById('tutorialOverlay');
-            tutorialOverlay.classList.remove('hidden');
-            showTutorialStep(0);
+            if (tutorialOverlay) {
+                tutorialOverlay.classList.remove('hidden');
+                showTutorialStep(0);
+            }
         }
 
         function showTutorialStep(stepIndex) {
@@ -1136,61 +1360,85 @@
             const step = tutorialSteps[stepIndex];
             const content = document.getElementById('tutorialContent');
 
-            content.innerHTML = `
-                <div class="tutorial-content">
-                    <div class="tutorial-icon">${step.icon}</div>
-                    <h3 class="tutorial-title">${step.title}</h3>
-                    <p class="tutorial-description">${step.description}</p>
-                    <div class="tutorial-highlight">${step.highlight}</div>
-                    <div class="tutorial-step-indicators">
-                        ${tutorialSteps.map((_, index) =>
-                            `<div class="tutorial-step-dot ${index === stepIndex ? 'active' : ''}"></div>`
-                        ).join('')}
+            if (content && step) {
+                content.innerHTML = `
+                    <div class="tutorial-content">
+                        <div class="tutorial-icon">${step.icon}</div>
+                        <h3 class="tutorial-title">${step.title}</h3>
+                        <p class="tutorial-description">${step.description}</p>
+                        <div class="tutorial-highlight">${step.highlight}</div>
+                        <div class="tutorial-step-indicators">
+                            ${tutorialSteps.map((_, index) =>
+                                `<div class="tutorial-step-dot ${index === stepIndex ? 'active' : ''}"></div>`
+                            ).join('')}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
-            // Update navigation
-            document.getElementById('tutorialStep').textContent = stepIndex + 1;
-            document.getElementById('tutorialTotal').textContent = tutorialSteps.length;
+                // Update navigation
+                document.getElementById('tutorialStep').textContent = stepIndex + 1;
+                document.getElementById('tutorialTotal').textContent = tutorialSteps.length;
 
-            // Update buttons
-            document.getElementById('tutorialPrev').style.display = stepIndex === 0 ? 'none' : 'inline-block';
-            document.getElementById('tutorialNext').style.display = stepIndex === tutorialSteps.length - 1 ? 'none' : 'inline-block';
-            document.getElementById('tutorialComplete').style.display = stepIndex === tutorialSteps.length - 1 ? 'inline-block' : 'none';
+                // Update buttons
+                const prevBtn = document.getElementById('tutorialPrev');
+                const nextBtn = document.getElementById('tutorialNext');
+                const completeBtn = document.getElementById('tutorialComplete');
+
+                if (prevBtn) prevBtn.style.display = stepIndex === 0 ? 'none' : 'inline-block';
+                if (nextBtn) nextBtn.style.display = stepIndex === tutorialSteps.length - 1 ? 'none' : 'inline-block';
+                if (completeBtn) completeBtn.style.display = stepIndex === tutorialSteps.length - 1 ? 'inline-block' : 'none';
+            }
         }
 
         function completeTutorial() {
             const tutorialOverlay = document.getElementById('tutorialOverlay');
-            tutorialOverlay.classList.add('hidden');
-            localStorage.setItem('claimit_tutorial_completed', 'true');
-            showNotification('Tutorial completed! You\'re ready to use ClaimIT.', 'success');
+            if (tutorialOverlay) {
+                tutorialOverlay.classList.add('hidden');
+                localStorage.setItem('claimit_tutorial_completed', 'true');
+                showNotification('Tutorial completed! You\'re ready to use ClaimIT.', 'success');
+            }
         }
 
         // Tutorial event listeners
-        document.getElementById('tutorialNext').addEventListener('click', function() {
-            if (currentTutorialStep < tutorialSteps.length - 1) {
-                showTutorialStep(currentTutorialStep + 1);
+        document.addEventListener('DOMContentLoaded', function() {
+            const nextBtn = document.getElementById('tutorialNext');
+            const prevBtn = document.getElementById('tutorialPrev');
+            const completeBtn = document.getElementById('tutorialComplete');
+            const tutorialOverlay = document.getElementById('tutorialOverlay');
+            const helpButton = document.getElementById('helpButton');
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    if (currentTutorialStep < tutorialSteps.length - 1) {
+                        showTutorialStep(currentTutorialStep + 1);
+                    }
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    if (currentTutorialStep > 0) {
+                        showTutorialStep(currentTutorialStep - 1);
+                    }
+                });
+            }
+
+            if (completeBtn) {
+                completeBtn.addEventListener('click', completeTutorial);
+            }
+
+            if (tutorialOverlay) {
+                tutorialOverlay.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        completeTutorial();
+                    }
+                });
+            }
+
+            if (helpButton) {
+                helpButton.addEventListener('click', showTutorial);
             }
         });
-
-        document.getElementById('tutorialPrev').addEventListener('click', function() {
-            if (currentTutorialStep > 0) {
-                showTutorialStep(currentTutorialStep - 1);
-            }
-        });
-
-        document.getElementById('tutorialComplete').addEventListener('click', completeTutorial);
-
-        // Close tutorial when clicking outside
-        document.getElementById('tutorialOverlay').addEventListener('click', function(e) {
-            if (e.target === this) {
-                completeTutorial();
-            }
-        });
-
-        // Help button event listener
-        document.getElementById('helpButton').addEventListener('click', showTutorial);
 
         function showNotification(message, type) {
             // Create notification element
@@ -1211,8 +1459,71 @@
                 }
             }, 5000);
         }
+
+        // Role-based UI enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add subtle animations to role-specific elements
+            const roleSections = document.querySelectorAll('.role-section');
+            roleSections.forEach(section => {
+                section.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(5px)';
+                    this.style.transition = 'transform 0.3s ease';
+                });
+
+                section.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+
+            // Update pending claims count (this would typically come from an API)
+            updatePendingClaimsCount();
+        });
+
+        function updatePendingClaimsCount() {
+            // This would typically make an API call to get the actual count
+            // For demo purposes, we'll use a random number
+            const pendingCount = Math.floor(Math.random() * 5);
+            const approvalQueueBadge = document.querySelector('.nav-link[href*="ApprovalQueue"] .badge');
+
+            if (approvalQueueBadge) {
+                if (pendingCount > 0) {
+                    approvalQueueBadge.textContent = pendingCount;
+                    approvalQueueBadge.style.display = 'inline';
+                } else {
+                    approvalQueueBadge.style.display = 'none';
+                }
+            }
+        }
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+@functions {
+    public string GetUserInitials(string userName)
+    {
+        if (string.IsNullOrEmpty(userName))
+            return "?";
+
+        var names = userName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (names.Length >= 2)
+            return $"{names[0][0]}{names[1][0]}".ToUpper();
+        else if (names.Length == 1 && names[0].Length >= 2)
+            return names[0].Substring(0, 2).ToUpper();
+        else
+            return "US";
+    }
+
+    public string GetRoleBadgeClass(string role)
+    {
+        return role?.ToLower() switch
+        {
+            "lecturer" => "badge-lecturer",
+            "coordinator" => "badge-coordinator",
+            "manager" => "badge-manager",
+            "hr" => "badge-hr",
+            _ => "badge-secondary"
+        };
+    }
+}
