@@ -21,11 +21,14 @@ namespace ClaimIT.Models
         [Required]
         public decimal HourlyRate { get; set; }
 
+        // COMPLETELY remove TotalAmount from the entity for now
+        // We'll handle this differently
+        [NotMapped]
         public decimal TotalAmount => HoursWorked * HourlyRate;
 
         public string? Notes { get; set; }
 
-        public string Status { get; set; } = "Pending"; // Pending, Verified, Approved, Rejected
+        public string Status { get; set; } = "Pending";
 
         public DateTime SubmittedDate { get; set; } = DateTime.Now;
         public DateTime? VerifiedDate { get; set; }
