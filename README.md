@@ -7,7 +7,7 @@
 ClaimIT is a comprehensive web application designed to automate the monthly claim submission and approval process for contract lecturers in educational institutions. The system streamlines the entire workflow from claim creation to final approval and payment processing.
 
 **Course:** PROG6212 
-**Institution:** Emiris  
+**Institution:** Emeris  
 **Student:** Joe Leo Van Niekerk  
 **Student Code:** ST10445055  
 **Year:** 2025
